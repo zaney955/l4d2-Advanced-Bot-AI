@@ -87,6 +87,8 @@ if (!("VSLib" in getroottable())) {
 			propanecanister001a = "weapon_propanetank"
 			explosive_box001 = "weapon_fireworkcrate"
 		}
+		// Weapons banned from bot use due to inefficiency
+		// Add weapons here to prevent bots from picking them up
 		BannedWeapons = {
 			sniper_scout = true
 			sniper_awp = true
