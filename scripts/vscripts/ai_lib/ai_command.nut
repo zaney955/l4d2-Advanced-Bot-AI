@@ -1052,7 +1052,6 @@ function BotAI::displayOptionMenu(player, args, args1) {
 		menu.AddOption(BotAI.fromParams(BotAI.UnStick, lang)+I18n.getTranslationKeyByLang(lang, "menu_unstick"), BotUnstickCmd);
 		menu.AddOption("emp_0", BotEmptyCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_next"), BotAI.displayOptionMenuNext);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_banned_weapons"), BotAI.displayOptionMenuBannedWeapons);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
 	}
 
@@ -1070,8 +1069,8 @@ function BotAI::displayOptionMenuNext(player, args, args1) {
 	}
 
 	local function bot(menu) {
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_witch_damage") + ": " + (BotAI.WitchDamageMultiplier).tostring(), BotAI.displayOptionMenuBotWitchDamage);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_special_damage") + ": " + (BotAI.SpecialDamageMultiplier).tostring(), BotAI.displayOptionMenuBotSpecialDamage);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_damage_settings"), BotAI.displayOptionMenuDamageSettings);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_banned_weapons"), BotAI.displayOptionMenuBannedWeapons);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_next"), BotAI.displayOptionMenuNextNext);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
@@ -1083,16 +1082,16 @@ function BotAI::displayOptionMenuNext(player, args, args1) {
 function BotAI::displayOptionMenuNextNext(player, args, args1) {
 	local lang = BotAI.language;
 	local function top(menu) {
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_tank_damage") + ": " + (BotAI.TankDamageMultiplier).tostring(), BotAI.displayOptionMenuBotTankDamage);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_common_damage") + ": " + (BotAI.CommonDamageMultiplier).tostring(), BotAI.displayOptionMenuBotCommonDamage);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_non_alive_damage") + ": " + (BotAI.NonAliveDamageMultiplier).tostring(), BotAI.displayOptionMenuBotNonAliveDamage);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_save_teleport") + ": " + (BotAI.SaveTeleport).tostring(), BotAI.displayOptionMenuBotTeleport);
 		menu.AddOption(BotAI.fromParams(BotAI.FallProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fall_protect"), BotFallProtectCmd);
+		menu.AddOption(BotAI.fromParams(BotAI.FireProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fire_protect"), BotFireProtectCmd);
+		menu.AddOption(BotAI.fromParams(BotAI.AcidProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_acid_protect"), BotAcidProtectCmd);
 	}
 
 	local function bot(menu) {
-		menu.AddOption(BotAI.fromParams(BotAI.FireProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fire_protect"), BotFireProtectCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.AcidProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_acid_protect"), BotAcidProtectCmd);
+		menu.AddOption("emp_0", BotEmptyCmd);
+		menu.AddOption("emp_0", BotEmptyCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNext);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_next"), BotAI.displayOptionMenuNextNextNext);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
@@ -1115,6 +1114,27 @@ function BotAI::displayOptionMenuNextNextNext(player, args, args1) {
 		menu.AddOption(BotAI.fromParams(BotAI.TeleportToSaferoom, lang)+I18n.getTranslationKeyByLang(lang, "menu_teleport_to_saferoom"), BotTeleportToSaferoomCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.SpreadCompensation, lang)+I18n.getTranslationKeyByLang(lang, "menu_spread_compensation"), BotSpreadCompensationCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNextNext);
+		menu.AddOption("emp_0", BotEmptyCmd);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+	}
+
+	BotAI.buildMenu(player, top, bot);
+}
+
+function BotAI::displayOptionMenuDamageSettings(player, args, args1) {
+	local lang = BotAI.language;
+	local function top(menu) {
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_witch_damage") + ": " + (BotAI.WitchDamageMultiplier).tostring(), BotAI.displayOptionMenuBotWitchDamage);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_special_damage") + ": " + (BotAI.SpecialDamageMultiplier).tostring(), BotAI.displayOptionMenuBotSpecialDamage);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_tank_damage") + ": " + (BotAI.TankDamageMultiplier).tostring(), BotAI.displayOptionMenuBotTankDamage);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_common_damage") + ": " + (BotAI.CommonDamageMultiplier).tostring(), BotAI.displayOptionMenuBotCommonDamage);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_non_alive_damage") + ": " + (BotAI.NonAliveDamageMultiplier).tostring(), BotAI.displayOptionMenuBotNonAliveDamage);
+	}
+
+	local function bot(menu) {
+		menu.AddOption("emp_0", BotEmptyCmd);
+		menu.AddOption("emp_0", BotEmptyCmd);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
 		menu.AddOption("emp_0", BotEmptyCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
 	}
@@ -1574,7 +1594,9 @@ function BotAI::displayOptionMenuBannedWeapons(player, args, args1) {
 
 	local function bot(menu) {
 		menu.AddOption("emp_0", BotEmptyCmd);
+		menu.AddOption("emp_0", BotEmptyCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
+		menu.AddOption("emp_0", BotEmptyCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
 	}
 

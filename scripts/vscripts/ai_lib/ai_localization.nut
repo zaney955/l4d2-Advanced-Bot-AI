@@ -162,6 +162,7 @@ function I18n::init() {
 		menu_exit = "Cancel",
 
 		menu_banned_weapons = "Banned Weapons",
+		menu_damage_settings = "Damage Settings",
 		weapon_scout = "Scout Sniper",
 		weapon_awp = "AWP Sniper",
 		botai_banned_weapon = "Banned {0} for bots",
@@ -283,6 +284,7 @@ function I18n::init() {
 		menu_exit = "取消",
 
 		menu_banned_weapons = "禁用武器",
+		menu_damage_settings = "伤害设置",
 		weapon_scout = "Scout狙击枪",
 		weapon_awp = "AWP狙击枪",
 		botai_banned_weapon = "已禁止bot使用 {0}",
@@ -405,6 +407,7 @@ function I18n::init() {
 		menu_exit = "取消",
 
 		menu_banned_weapons = "禁用武器",
+		menu_damage_settings = "傷害設置",
 		weapon_scout = "Scout狙擊槍",
 		weapon_awp = "AWP狙擊槍",
 		botai_banned_weapon = "已禁止bot使用 {0}",
