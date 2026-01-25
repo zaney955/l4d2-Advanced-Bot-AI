@@ -87,6 +87,10 @@ if (!("VSLib" in getroottable())) {
 			propanecanister001a = "weapon_propanetank"
 			explosive_box001 = "weapon_fireworkcrate"
 		}
+		BannedWeapons = {
+			sniper_scout = true
+			sniper_awp = true
+		}
 		enumGround = {
 			env_entity_igniter = "env_entity_igniter"
 			entityflame = "entityflame"
