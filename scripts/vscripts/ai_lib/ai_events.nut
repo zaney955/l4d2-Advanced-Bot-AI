@@ -1083,14 +1083,8 @@ function ChatTriggers::botnonaliveprotect( player, args, text ) {
 	BotNonAliveProtectCmd( player, args, text );
 }
 
-function ChatTriggers::botbanscout( player, args, text ) {
-	local weaponArgs = ["sniper_scout"];
-	BotBannedWeaponCmd( player, weaponArgs, text );
-}
-
-function ChatTriggers::botbanawp( player, args, text ) {
-	local weaponArgs = ["sniper_awp"];
-	BotBannedWeaponCmd( player, weaponArgs, text );
+function ChatTriggers::botban( player, args, text ) {
+	BotAI.displayOptionMenuBannedWeapons( player, args, text );
 }
 
 function ChatTriggers::botmenu( player, args, text ) {
