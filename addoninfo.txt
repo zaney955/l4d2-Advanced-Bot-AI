@@ -80,6 +80,7 @@
     [*]Bot对特感伤害比例。 ---管理员模式下仅管理员可以使用。
     [*]Bot对Tank伤害比例。 ---管理员模式下仅管理员可以使用。
     [*]Bot对小僵尸伤害比例。 ---管理员模式下仅管理员可以使用。
+    [*]配置Bot禁用的武器（如Scout和AWP狙击枪）。
 [/list]
 
 [h1]功能指令[/h1]
@@ -292,6 +293,7 @@ Toggleable menu options:
 [*]Bot damage multiplier against Special Infected. (Admin-only if server mode is enabled.)
 [*]Bot damage multiplier against Tanks. (Admin-only if server mode is enabled.)
 [*]Bot damage multiplier against common infected. (Admin-only if server mode is enabled.)
+[*]Configure banned weapons for bots (e.g., Scout and AWP sniper rifles).
 [*]Toggle Bot immunity to instant death (e.g., falling off cliffs).
 [/list]
 
