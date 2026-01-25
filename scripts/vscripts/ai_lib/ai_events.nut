@@ -1,8 +1,19 @@
 ::BotAI.Events.OnGameEvent_item_pickup <- function(event) {
 	local p = GetPlayerFromUserID(event.userid);
 	local item = event.item;
+
 	if((item == "first_aid_kit_spawn" || item == "first_aid_kit" || item == "weapon_first_aid_kit_spawn" || item == "weapon_first_aid_kit" )&& p.IsSurvivor() && IsPlayerABot(p))
 		BotAI.doAmmoUpgrades(p);
+
+	if(BotAI.IsPlayerEntityValid(p) && IsPlayerABot(p)) {
+		if(BotAI.IsWeaponBanned(item)) {
+			BotAI.removeItem(p, item);
+
+			if(BotAI.BotDebugMode) {
+				printl("[Bot AI] Prevented bot from picking up banned weapon: " + item);
+			}
+		}
+	}
 }
 
 ::BotAI.Events.OnGameEvent_player_say <- function(event) {
