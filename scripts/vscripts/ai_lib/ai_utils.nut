@@ -1356,6 +1356,19 @@ function BotAI::HasItem(player, str, t = null) {
 	return false;
 }
 
+function BotAI::IsWeaponBanned(className) {
+	if(!BotAI.BannedWeapons || BotAI.BannedWeapons.len() == 0) {
+		return false;
+	}
+
+	local weaponName = className;
+	if (weaponName.find("weapon_") == 0) {
+		weaponName = weaponName.slice(7);
+	}
+
+	return weaponName in BotAI.BannedWeapons;
+}
+
 //void GetInvTable(CTerrorPLayer player, table invTable)
 //GetInvTable is a danger function, the first param if it's not CTerrorPLayer or it's null, game crashes
 function BotAI::GetHeldItems(player) {
