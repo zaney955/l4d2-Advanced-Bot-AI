@@ -7,11 +7,16 @@
 
 	if(BotAI.IsPlayerEntityValid(p) && IsPlayerABot(p)) {
 		if(BotAI.IsWeaponBanned(item)) {
-			BotAI.removeItem(p, item);
+			// Delay removal to allow game engine to transfer weapon first
+			BotAI.delayTimer(function() {
+				if(BotAI.IsPlayerEntityValid(p)) {
+					BotAI.removeItem(p, item);
 
-			if(BotAI.BotDebugMode) {
-				printl("[Bot AI] Prevented bot from picking up banned weapon: " + item);
-			}
+					if(BotAI.BotDebugMode) {
+						printl("[Bot AI] Prevented bot from picking up banned weapon: " + item);
+					}
+				}
+			}, 0.1, p.GetEntityIndex().tostring() + "_remove_banned_weapon");
 		}
 	}
 }
