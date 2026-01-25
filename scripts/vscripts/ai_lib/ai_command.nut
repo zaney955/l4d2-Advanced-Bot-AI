@@ -692,6 +692,28 @@ function BotAI::getDamageMultiplier(args, minValue = -16.0, maxValue = 999.0) {
     BotAI.SendPlayer(player, "botai_non_alive_damage", 0.2, BotAI.NonAliveDamageMultiplier);
 }
 
+::BotBannedWeaponCmd <- function ( speaker, args , args1) {
+	local player = speaker;
+	if (typeof player == "VSLIB_PLAYER")
+		player = player.GetBaseEntity();
+
+	BotExitMenuCmd(speaker, args, args1);
+
+	if(!BotAI.BannedWeapons)
+		BotAI.BannedWeapons = {};
+
+	local weapon = args[0];
+	if(weapon in BotAI.BannedWeapons) {
+		delete BotAI.BannedWeapons[weapon];
+		BotAI.SaveSetting();
+		BotAI.SendPlayer(player, "botai_unbanned_weapon", 0.2, weapon);
+	} else {
+		BotAI.BannedWeapons[weapon] <- true;
+		BotAI.SaveSetting();
+		BotAI.SendPlayer(player, "botai_banned_weapon", 0.2, weapon);
+	}
+}
+
 ::BotMeleeCmd <- function ( speaker, args , args1) {
 	local player = speaker;
 	if (typeof player == "VSLIB_PLAYER")
@@ -1030,6 +1052,7 @@ function BotAI::displayOptionMenu(player, args, args1) {
 		menu.AddOption(BotAI.fromParams(BotAI.UnStick, lang)+I18n.getTranslationKeyByLang(lang, "menu_unstick"), BotUnstickCmd);
 		menu.AddOption("emp_0", BotEmptyCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_next"), BotAI.displayOptionMenuNext);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_banned_weapons"), BotAI.displayOptionMenuBannedWeapons);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
 	}
 
@@ -1527,6 +1550,31 @@ function BotAI::displayOptionMenuBotNonAliveDamage(player, args, args1) {
 		menu.AddOption("2.0", pro__);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNextNext);
 		menu.AddOption("emp_0", BotEmptyCmd);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+	}
+
+	BotAI.buildMenu(player, top, bot);
+}
+
+function BotAI::displayOptionMenuBannedWeapons(player, args, args1) {
+	local lang = BotAI.language;
+	local function top(menu) {
+		local scoutStatus = "sniper_scout" in BotAI.BannedWeapons;
+		local awpStatus = "sniper_awp" in BotAI.BannedWeapons;
+
+		menu.AddOption((scoutStatus ? "[x] " : "[  ] ") + I18n.getTranslationKeyByLang(lang, "weapon_scout"), function(p, a, a1) {
+			local args = ["sniper_scout"];
+			BotBannedWeaponCmd(p, args, "");
+		});
+		menu.AddOption((awpStatus ? "[x] " : "[  ] ") + I18n.getTranslationKeyByLang(lang, "weapon_awp"), function(p, a, a1) {
+			local args = ["sniper_awp"];
+			BotBannedWeaponCmd(p, args, "");
+		});
+	}
+
+	local function bot(menu) {
+		menu.AddOption("emp_0", BotEmptyCmd);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
 	}
 

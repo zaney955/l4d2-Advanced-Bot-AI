@@ -161,6 +161,12 @@ function I18n::init() {
 		menu_disable = "✕ ",
 		menu_exit = "Cancel",
 
+		menu_banned_weapons = "Banned Weapons",
+		weapon_scout = "Scout Sniper",
+		weapon_awp = "AWP Sniper",
+		botai_banned_weapon = "Banned {0} for bots",
+		botai_unbanned_weapon = "Unbanned {0} for bots",
+
 		ping_menu = "Ping Menu",
 		ping_move = "Move",
 		ping_use = "Use",
@@ -275,6 +281,12 @@ function I18n::init() {
 		menu_next = "下一页",
 		menu_pre = "上一页",
 		menu_exit = "取消",
+
+		menu_banned_weapons = "禁用武器",
+		weapon_scout = "Scout狙击枪",
+		weapon_awp = "AWP狙击枪",
+		botai_banned_weapon = "已禁止bot使用 {0}",
+		botai_unbanned_weapon = "已允许bot使用 {0}",
 
 		ping_menu = "标点菜单",
 		ping_move = "移动",
@@ -391,6 +403,12 @@ function I18n::init() {
 		menu_next = "下一頁",
 		menu_pre = "上一頁",
 		menu_exit = "取消",
+
+		menu_banned_weapons = "禁用武器",
+		weapon_scout = "Scout狙擊槍",
+		weapon_awp = "AWP狙擊槍",
+		botai_banned_weapon = "已禁止bot使用 {0}",
+		botai_unbanned_weapon = "已允許bot使用 {0}",
 
 		ping_menu = "標記選單",
 		ping_move = "移動",
