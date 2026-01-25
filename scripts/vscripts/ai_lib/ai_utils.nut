@@ -1357,6 +1357,11 @@ function BotAI::HasItem(player, str, t = null) {
 }
 
 function BotAI::IsWeaponBanned(className) {
+	// Guard against null, undefined, or non-string inputs
+	if (typeof className != "string" || className.len() == 0) {
+		return false;
+	}
+
 	if(!BotAI.BannedWeapons || BotAI.BannedWeapons.len() == 0) {
 		return false;
 	}
