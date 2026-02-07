@@ -96,15 +96,15 @@ class ::AITaskUpdateBotFireState extends AITaskSingle
 			BotAI.FullPress[player]--;
 
 		if(BotAI.IsEntityValid(target)) {
-				local HasWitch = false;
-				local HasPlayer = false;
-				local Shot = false;
-				local shotDis = 1800;
-				local distance = BotAI.nextTickDistance(target, player);
-				local targetName = target.GetClassname();
-				local isTank = targetName == "player" && target.GetZombieType() == 8;
-				local skillFactor = BotAI.OverpoweredCombatBoost ? BotAI.BotCombatSkill * 10 : 0;
-				local meleeRange = Convars.GetFloat("melee_range") + skillFactor;
+			local HasWitch = false;
+			local HasPlayer = false;
+			local Shot = false;
+			local shotDis = 1800;
+			local distance = BotAI.nextTickDistance(target, player);
+			local targetName = target.GetClassname();
+			local isTank = targetName == "player" && target.GetZombieType() == 8;
+			local skillFactor = BotAI.IsOverpoweredCombatBoostEnabled() ? BotAI.BotCombatSkill * 10 : 0;
+			local meleeRange = Convars.GetFloat("melee_range") + skillFactor;
 
 			if(targetName == "player" && target.IsSurvivor() && target != player) {
 				if((target.IsIncapacitated() || target.IsHangingFromLedge()) && !BotAI.isPlayerBeingRevived(target) && !target.IsDominatedBySpecialInfected() && distance < 150 && !BotAI.HasTank) {
@@ -200,13 +200,13 @@ class ::AITaskUpdateBotFireState extends AITaskSingle
 				}
 			}
 
-				if(targetName == "tank_rock" || isTank) {
-					if(BotAI.OverpoweredCombatBoost && BotAI.IsEntityValid(wep) && !isMelee && wep.Clip1() <= 0) {
-						local ammoAmount = wep.GetMaxClip1() * 0.3;
-						if(ammoAmount < 1)
-							ammoAmount = 1;
-						wep.SetClip1(ammoAmount);
-					}
+			if(targetName == "tank_rock" || isTank) {
+				if(BotAI.IsOverpoweredCombatBoostEnabled() && BotAI.IsEntityValid(wep) && !isMelee && wep.Clip1() <= 0) {
+					local ammoAmount = wep.GetMaxClip1() * 0.3;
+					if(ammoAmount < 1)
+						ammoAmount = 1;
+					wep.SetClip1(ammoAmount);
+				}
 				Shot = true;
 			}
 

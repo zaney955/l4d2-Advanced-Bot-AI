@@ -530,7 +530,7 @@ function BotAI::isNearCheckPoint(player, distance = 250) {
 }
 
 ::BotAI.ReloadPrimaryClip <- function(p) {
-	if (!BotAI.OverpoweredCombatBoost) {
+	if (!BotAI.IsOverpoweredCombatBoostEnabled()) {
 		return;
 	}
 

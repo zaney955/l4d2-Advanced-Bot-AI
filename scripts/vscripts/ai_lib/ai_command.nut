@@ -454,13 +454,9 @@
 		return;
 	}
 
-	if(BotAI.OverpoweredCombatBoost) {
-		BotAI.OverpoweredCombatBoost = false;
-		BotAI.SendPlayer(player, "botai_overpowered_combat_boost_off");
-	} else {
-		BotAI.OverpoweredCombatBoost = true;
-		BotAI.SendPlayer(player, "botai_overpowered_combat_boost_on");
-	}
+	local enableBoost = !BotAI.IsOverpoweredCombatBoostEnabled();
+	BotAI.SetOverpoweredCombatBoostEnabled(enableBoost);
+	BotAI.SendPlayer(player, enableBoost ? "botai_overpowered_combat_boost_on" : "botai_overpowered_combat_boost_off");
 
 	BotAI.SaveSetting();
 }

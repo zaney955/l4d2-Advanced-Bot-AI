@@ -204,16 +204,16 @@ if (!("VSLib" in getroottable())) {
 		TankDamageMultiplier = 1.0
 		CommonDamageMultiplier = 1.0
 		NonAliveDamageMultiplier = 1.0
-			ServerLanguage = "english"
-			ABA_Admins = {}
-			NoticeConfig = true
-			NeedBotAlive = true
-			TeleportToSaferoom = false
-			SpreadCompensation = true
-			OverpoweredCombatBoost = true
-			SettingsSavePending = false
-			SettingsSaveDelay = 0.6
-			}
+		ServerLanguage = "english"
+		ABA_Admins = {}
+		NoticeConfig = true
+		NeedBotAlive = true
+		TeleportToSaferoom = false
+		SpreadCompensation = true
+		OverpoweredCombatBoost = true
+		SettingsSavePending = false
+		SettingsSaveDelay = 0.6
+		}
 
 	::BotAI.AITaskList <- {
 		singleTasks = {}
@@ -228,6 +228,18 @@ function BotAI::trueDude() {
 
 function BotAI::falseDude() {
 	return false;
+}
+
+::BotAI.IsOverpoweredCombatBoostEnabled <- function() {
+	return BotAI.OverpoweredCombatBoost;
+}
+
+::BotAI.SetOverpoweredCombatBoostEnabled <- function(enabled) {
+	BotAI.OverpoweredCombatBoost = enabled;
+}
+
+::BotAI.IsOverpoweredCombatBoostSkillAbove <- function(skill) {
+	return BotAI.OverpoweredCombatBoost && BotAI.BotCombatSkill > skill;
 }
 
 class ::TaskPerformance
@@ -438,41 +450,40 @@ BotAI.witchMeleeDmg <- -2145386492;
 }
 
 ::BotAI.BuildSettingText <- function() {
-
-    local settingList =
-        "BotCombatSkill = " + BotAI.BotCombatSkill.tostring() +
-			"\nFollowRange = " + BotAI.FollowRange.tostring() +
-			"\nTeleportDistance = " + BotAI.TeleportDistance.tostring() +
+	local settingList =
+		"BotCombatSkill = " + BotAI.BotCombatSkill.tostring() +
+		"\nFollowRange = " + BotAI.FollowRange.tostring() +
+		"\nTeleportDistance = " + BotAI.TeleportDistance.tostring() +
 		"\nSaveTeleport = " + BotAI.SaveTeleport.tostring() +
-        "\nBotDebugMode = " + BotAI.BotDebugMode.tostring() +
-        "\nNeedGasFinding = " + BotAI.NeedGasFinding.tostring() +
-        "\nNeedThrowMolotov = " + BotAI.NeedThrowMolotov.tostring() +
+		"\nBotDebugMode = " + BotAI.BotDebugMode.tostring() +
+		"\nNeedGasFinding = " + BotAI.NeedGasFinding.tostring() +
+		"\nNeedThrowMolotov = " + BotAI.NeedThrowMolotov.tostring() +
 		"\nNeedThrowPipeBomb = " + BotAI.NeedThrowPipeBomb.tostring() +
 		"\nUseUpgrades = " + BotAI.UseUpgrades.tostring() +
-        "\nImmunity = " + BotAI.Immunity.tostring() +
-        "\nPathFinding = " + BotAI.PathFinding.tostring() +
-        "\nUnStick = " + BotAI.UnStick.tostring() +
+		"\nImmunity = " + BotAI.Immunity.tostring() +
+		"\nPathFinding = " + BotAI.PathFinding.tostring() +
+		"\nUnStick = " + BotAI.UnStick.tostring() +
 		"\nFallProtect = " + BotAI.FallProtect.tostring() +
 		"\nFireProtect = " + BotAI.FireProtect.tostring() +
 		"\nAcidProtect = " + BotAI.AcidProtect.tostring() +
 		"\nNonAliveProtect = " + BotAI.NonAliveProtect.tostring() +
-        "\nDefibrillator = " + BotAI.Defibrillator.tostring() +
+		"\nDefibrillator = " + BotAI.Defibrillator.tostring() +
 		"\nCloseSaferoomDoor = " + BotAI.CloseSaferoomDoor.tostring() +
 		"\nPassingItems = " + BotAI.PassingItems.tostring() +
-        "\nServerMode = " + BotAI.ServerMode.tostring() +
+		"\nServerMode = " + BotAI.ServerMode.tostring() +
 		"\nWitchDamageMultiplier = " + BotAI.WitchDamageMultiplier.tostring() +
 		"\nSpecialDamageMultiplier = " + BotAI.SpecialDamageMultiplier.tostring() +
 		"\nTankDamageMultiplier = " + BotAI.TankDamageMultiplier.tostring() +
 		"\nCommonDamageMultiplier = " + BotAI.CommonDamageMultiplier.tostring() +
 		"\nNonAliveDamageMultiplier = " + BotAI.NonAliveDamageMultiplier.tostring() +
 		"\nServerLanguage = \"" + BotAI.ServerLanguage.tostring() + "\"" +
-        "\nMelee = " + BotAI.Melee.tostring() +
-        "\nNoticeConfig = " + BotAI.NoticeConfig.tostring() +
-        "\nNeedBotAlive = " + BotAI.NeedBotAlive.tostring() +
-		    "\nTeleportToSaferoom = " + BotAI.TeleportToSaferoom.tostring() +
-				"\nSpreadCompensation = " + BotAI.SpreadCompensation.tostring() +
-			"\nOverpoweredCombatBoost = " + BotAI.OverpoweredCombatBoost.tostring() +
-	        "\nBackPack = " + BotAI.BackPack.tostring();
+		"\nMelee = " + BotAI.Melee.tostring() +
+		"\nNoticeConfig = " + BotAI.NoticeConfig.tostring() +
+		"\nNeedBotAlive = " + BotAI.NeedBotAlive.tostring() +
+		"\nTeleportToSaferoom = " + BotAI.TeleportToSaferoom.tostring() +
+		"\nSpreadCompensation = " + BotAI.SpreadCompensation.tostring() +
+		"\nOverpoweredCombatBoost = " + BotAI.OverpoweredCombatBoost.tostring() +
+		"\nBackPack = " + BotAI.BackPack.tostring();
 
 	return settingList;
 }
@@ -1951,14 +1962,14 @@ function BotAI::doNoticeText(args) {
 				{ key = "menu_take_melee", value = "", enabled = ::BotAI.Melee, isValue = false }
 			];
 
-				local settings_1 = [
-					{ key = "menu_carry", value = "", enabled = ::BotAI.BackPack, isValue = false },
-					{ key = "menu_upgrads", value = "", enabled = ::BotAI.UseUpgrades, isValue = false },
-					{ key = "menu_alive", value = "", enabled = ::BotAI.NeedBotAlive, isValue = false },
-					{ key = "menu_overpowered_combat_boost", value = "", enabled = ::BotAI.OverpoweredCombatBoost, isValue = false },
-					{ key = "menu_witch_damage", value = ::BotAI.WitchDamageMultiplier, enabled = true, isValue = true },
-					{ key = "menu_special_damage", value = ::BotAI.SpecialDamageMultiplier, enabled = true, isValue = true },
-					{ key = "menu_tank_damage", value = ::BotAI.TankDamageMultiplier, enabled = true, isValue = true },
+			local settings_1 = [
+				{ key = "menu_carry", value = "", enabled = ::BotAI.BackPack, isValue = false },
+				{ key = "menu_upgrads", value = "", enabled = ::BotAI.UseUpgrades, isValue = false },
+				{ key = "menu_alive", value = "", enabled = ::BotAI.NeedBotAlive, isValue = false },
+				{ key = "menu_overpowered_combat_boost", value = "", enabled = ::BotAI.OverpoweredCombatBoost, isValue = false },
+				{ key = "menu_witch_damage", value = ::BotAI.WitchDamageMultiplier, enabled = true, isValue = true },
+				{ key = "menu_special_damage", value = ::BotAI.SpecialDamageMultiplier, enabled = true, isValue = true },
+				{ key = "menu_tank_damage", value = ::BotAI.TankDamageMultiplier, enabled = true, isValue = true },
 				{ key = "menu_common_damage", value = ::BotAI.CommonDamageMultiplier, enabled = true, isValue = true }
 			];
 
