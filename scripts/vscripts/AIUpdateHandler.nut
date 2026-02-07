@@ -269,26 +269,17 @@ function BotAI::falseDude() {
 		}
 	}
 
-	if (paramCount != null && paramCount > 1) {
-		printl("[Bot AI] Timer callback '" + callbackName + "' expects more than one parameter, skipped.");
-		return null;
-	}
-
-	if (paramCount == null) {
-		return function(_params = null) {
-			try {
-				return original(_params);
-			} catch (err) {
-				local errStr = err.tostring();
-				if (errStr.find("wrong number of parameters") != null) {
-					return original();
-				}
-				throw err;
+	return function(_params = null) {
+		try {
+			return original(_params);
+		} catch (err) {
+			local errStr = err.tostring();
+			if (errStr.find("wrong number of parameters") != null) {
+				return original();
 			}
+			throw err;
 		}
 	}
-
-	return func;
 }
 
 ::BotAI.PatchTimerCallbackCompatibility <- function() {
