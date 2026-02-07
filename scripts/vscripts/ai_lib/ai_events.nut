@@ -802,7 +802,7 @@ function BotAI::ShouldOverpoweredAutoShove(victim) {
 	if(BotAI.IsPlayerEntityValid(attacker) && attacker.IsSurvivor() && IsPlayerABot(attacker) && !attacker.IsDead() && BotAI.IsPlayerEntityValid(victim) && !victim.IsSurvivor() && IsPlayerABot(victim) && !victim.IsDead()) {
 		if(BotAI.IsOnGround(victim)) {
 			victim.SetSenseFlags(victim.GetSenseFlags() | BOT_CANT_SEE);
-			::BotAI.Timers.AddTimer(1.4, false, BotAI.EnableSight {infect = victim});
+			::BotAI.Timers.AddTimer(1.4, false, BotAI.EnableSight, {infect = victim});
 		}
 		BotAI.applyPushVelocity(attacker, victim);
 	}

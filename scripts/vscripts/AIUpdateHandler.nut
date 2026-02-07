@@ -242,6 +242,78 @@ function BotAI::falseDude() {
 	return BotAI.OverpoweredCombatBoost && BotAI.BotCombatSkill > skill;
 }
 
+::BotAI.WrapTimerCallback <- function(func) {
+	if (typeof func != "function") {
+		return null;
+	}
+
+	local paramCount = null;
+	local callbackName = "<anonymous>";
+	try {
+		local info = func.getinfos();
+		if ("name" in info && info.name != null && info.name != "") {
+			callbackName = info.name;
+		}
+		if ("parameters" in info && info.parameters != null) {
+			paramCount = info.parameters.len();
+		}
+	} catch (_err) {
+		// Some function objects may not expose metadata; keep original callback.
+	}
+
+	local original = func;
+
+	if (paramCount == 0) {
+		return function(_params = null) {
+			return original();
+		}
+	}
+
+	if (paramCount != null && paramCount > 1) {
+		printl("[Bot AI] Timer callback '" + callbackName + "' expects more than one parameter, skipped.");
+		return null;
+	}
+
+	if (paramCount == null) {
+		return function(_params = null) {
+			try {
+				return original(_params);
+			} catch (err) {
+				local errStr = err.tostring();
+				if (errStr.find("wrong number of parameters") != null) {
+					return original();
+				}
+				throw err;
+			}
+		}
+	}
+
+	return func;
+}
+
+::BotAI.PatchTimerCallbackCompatibility <- function() {
+	if (!("Timers" in BotAI) || BotAI.Timers == null) {
+		return;
+	}
+
+	if ("_AddTimerOriginal" in BotAI.Timers) {
+		return;
+	}
+
+	BotAI.Timers._AddTimerOriginal <- BotAI.Timers.AddTimer;
+	BotAI.Timers.AddTimer = function(delay, repeat, func, paramTable = null, flags = 0, value = {}) {
+		local wrapped = BotAI.WrapTimerCallback(func);
+		if (wrapped == null) {
+			printl("[Bot AI] Timer callback must be a function, skipped.");
+			return -1;
+		}
+
+		return this._AddTimerOriginal(delay, repeat, wrapped, paramTable, flags, value);
+	}
+}
+
+BotAI.PatchTimerCallbackCompatibility();
+
 class ::TaskPerformance
 {
 	constructor(nameIn)
@@ -496,7 +568,7 @@ BotAI.witchMeleeDmg <- -2145386492;
 
 		BotAI.SettingsSavePending = true;
 
-		local function flushSave() {
+		local function flushSave(_params = null) {
 			BotAI.SaveSetting(true);
 		}
 
@@ -2067,6 +2139,8 @@ function BotAI::resetAITask() {
 }
 
 function resetAllBots() {
+	BotAI.PatchTimerCallbackCompatibility();
+
 	local playerSet = null;
 
 	while(playerSet = Entities.FindByClassname(playerSet, "player")) {
