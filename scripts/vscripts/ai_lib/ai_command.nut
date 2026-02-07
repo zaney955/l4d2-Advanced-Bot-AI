@@ -442,6 +442,29 @@
 	BotAI.SaveSetting();
 }
 
+::BotOverpoweredCombatBoostCmd <- function ( speaker, args  , args1) {
+	BotExitMenuCmd(speaker, args, args1);
+	local player = speaker;
+	if (typeof player == "VSLIB_PLAYER") {
+		player = player.GetBaseEntity();
+	}
+
+	if(!ABA_IsAdmin(speaker)) {
+		BotAI.SendPlayer(player, "botai_admin_only");
+		return;
+	}
+
+	if(BotAI.OverpoweredCombatBoost) {
+		BotAI.OverpoweredCombatBoost = false;
+		BotAI.SendPlayer(player, "botai_overpowered_combat_boost_off");
+	} else {
+		BotAI.OverpoweredCombatBoost = true;
+		BotAI.SendPlayer(player, "botai_overpowered_combat_boost_on");
+	}
+
+	BotAI.SaveSetting();
+}
+
 ::BotPathFindingCmd <- function ( speaker, args , args1) {
 	BotExitMenuCmd(speaker, args, args1);
 	local player = speaker;
@@ -1113,8 +1136,9 @@ function BotAI::displayOptionMenuNextNextNext(player, args, args1) {
 	local function bot(menu) {
 		menu.AddOption(BotAI.fromParams(BotAI.TeleportToSaferoom, lang)+I18n.getTranslationKeyByLang(lang, "menu_teleport_to_saferoom"), BotTeleportToSaferoomCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.SpreadCompensation, lang)+I18n.getTranslationKeyByLang(lang, "menu_spread_compensation"), BotSpreadCompensationCmd);
+		menu.AddOption(BotAI.fromParams(BotAI.OverpoweredCombatBoost, lang)+I18n.getTranslationKeyByLang(lang, "menu_overpowered_combat_boost"), BotOverpoweredCombatBoostCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNextNext);
-		menu.AddOption("emp_0", BotEmptyCmd);
+		menu.AddOption("emp_1", BotEmptyCmd);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
 	}
 

@@ -530,6 +530,10 @@ function BotAI::isNearCheckPoint(player, distance = 250) {
 }
 
 ::BotAI.ReloadPrimaryClip <- function(p) {
+	if (!BotAI.OverpoweredCombatBoost) {
+		return;
+	}
+
 	local t = BotAI.GetHeldItems(p);
 
 	if (t && "slot0" in t && t["slot0"]) {

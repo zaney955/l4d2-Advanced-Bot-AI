@@ -144,7 +144,7 @@
 }
 
 ::BotAI.Events.OnGameEvent_bullet_impact <- function(event) {
-	if (BotAI.BotCombatSkill < 1 || !BotAI.SpreadCompensation) {
+	if (!BotAI.OverpoweredCombatBoost || BotAI.BotCombatSkill < 1 || !BotAI.SpreadCompensation) {
 		return;
 	}
 
@@ -180,6 +180,7 @@
 	local p = GetPlayerFromUserID(event.userid);
 	local victim = BotAI.getBotLookAt(p);
 	local weaponName = "weapon_" + event.weapon;
+	local overpoweredBoost = BotAI.OverpoweredCombatBoost;
 
 	/*
 	if("weapon" in event && event.weapon.find("claw") != null && !p.IsSurvivor()) {
@@ -212,12 +213,16 @@
 		local wep = p.GetActiveWeapon();
 		local isSniper = weaponName.find("shotgun") != null || weaponName.find("sniper") != null || weaponName.find("pistol") != null;
 
-		local pass = false;
-		local function counterSpecial(target, sight) {
-			local skillTest = BotAI.BotCombatSkill;
-			if (skillTest > 4) {
-				skillTest = 4;
-			}
+			local pass = false;
+			local function counterSpecial(target, sight) {
+				if(!overpoweredBoost) {
+					return;
+				}
+
+				local skillTest = BotAI.BotCombatSkill;
+				if (skillTest > 4) {
+					skillTest = 4;
+				}
 
 			if(BotAI.IsEntitySurvivor(target) && target.IsDominatedBySpecialInfected()) {
 				local realTarget = target.GetSpecialInfectedDominatingMe();
@@ -248,7 +253,7 @@
 
 		local damaged = false;
 
-		if((weaponName.find("melee") != null || weaponName.find("chainsaw") != null) && BotAI.BotCombatSkill > 0) {
+			if(overpoweredBoost && (weaponName.find("melee") != null || weaponName.find("chainsaw") != null) && BotAI.BotCombatSkill > 0) {
 			local target = null;
 			local skillFactor = BotAI.BotCombatSkill * 10;
 			local range = Convars.GetFloat("melee_range") + skillFactor;
@@ -306,7 +311,7 @@
 			}
 		}
 
-		if(BotAI.IsEntityValid(wep) && (BotAI.getIsMelee(p) || isSniper)) {
+			if(overpoweredBoost && BotAI.IsEntityValid(wep) && (BotAI.getIsMelee(p) || isSniper)) {
 			local mult = 0.7;
 			if(isSniper) {
 				mult = 0.3;
@@ -329,8 +334,8 @@
 		}
 	}
 
-	if(BotAI.BotCombatSkill < 2)
-		return;
+		if(!overpoweredBoost || BotAI.BotCombatSkill < 2)
+			return;
 
 	if(BotAI.IsEntityValid(victim)
 		&& victim.GetClassname() == "witch"
@@ -372,8 +377,8 @@
 		}
 	}
 
-	if(BotAI.BotCombatSkill < 3)
-		return;
+		if(!overpoweredBoost || BotAI.BotCombatSkill < 3)
+			return;
 
 	if(p != null && p.IsSurvivor() && IsPlayerABot(p)) {
 		local weapon = p.GetActiveWeapon();
@@ -514,7 +519,7 @@
 	if(!("victim" in event) || event.victim == null || !("userid" in event) || event.userid == null)
 		return;
 
-	if (BotAI.BotCombatSkill > 2) {
+	if (BotAI.OverpoweredCombatBoost && BotAI.BotCombatSkill > 2) {
 		local victim = GetPlayerFromUserID(event.victim);
 
 		if (BotAI.IsEntitySurvivorBot(victim)) {
@@ -542,7 +547,7 @@
 		return;
 
 	local victim = GetPlayerFromUserID(event.victim);
-	if (BotAI.BotCombatSkill > 2 && BotAI.IsEntitySurvivorBot(victim)) {
+	if (BotAI.OverpoweredCombatBoost && BotAI.BotCombatSkill > 2 && BotAI.IsEntitySurvivorBot(victim)) {
 		local inventory = BotAI.GetHeldItems(victim);
 
 		if ("slot1" in inventory) {
@@ -609,7 +614,7 @@
 	local victim = GetPlayerFromUserID(event.victim);
 	BotAI.setContext(attacker, "BOTAI_BREAK", 1.5);
 
-	if (BotAI.BotCombatSkill > 2 && BotAI.IsEntitySurvivorBot(victim) && RandomInt(0, BotAI.BotCombatSkill - 1) > 0) {
+	if (BotAI.OverpoweredCombatBoost && BotAI.BotCombatSkill > 2 && BotAI.IsEntitySurvivorBot(victim) && RandomInt(0, BotAI.BotCombatSkill - 1) > 0) {
 		NetProps.SetPropEntity(attacker, "m_tongueVictim", -1);
 		NetProps.SetPropEntity(victim, "m_tongueOwner", -1);
 		return;
@@ -678,7 +683,7 @@
 	local victim = GetPlayerFromUserID(event.victim);
 	local attacker = GetPlayerFromUserID(event.userid);
 
-	local shouldShove = BotAI.BotCombatSkill > 2 && BotAI.IsEntitySurvivorBot(victim) && RandomInt(0, BotAI.BotCombatSkill * BotAI.BotCombatSkill) > 0;
+	local shouldShove = BotAI.OverpoweredCombatBoost && BotAI.BotCombatSkill > 2 && BotAI.IsEntitySurvivorBot(victim) && RandomInt(0, BotAI.BotCombatSkill * BotAI.BotCombatSkill) > 0;
 	local needShove = BotAI.needOil;
 
 	if(BotAI.IsEntitySurvivorBot(victim) && BotAI.UseTarget != null && BotAI.NeedGasFinding && needShove && RandomInt(0, 4) > 0) {
@@ -715,7 +720,7 @@
 	local victim = GetPlayerFromUserID(event.victim);
 	local attacker = GetPlayerFromUserID(event.userid);
 
-	local shouldShove = BotAI.BotCombatSkill > 2 && BotAI.IsEntitySurvivorBot(victim) && RandomInt(0, BotAI.BotCombatSkill * BotAI.BotCombatSkill) > 0;
+	local shouldShove = BotAI.OverpoweredCombatBoost && BotAI.BotCombatSkill > 2 && BotAI.IsEntitySurvivorBot(victim) && RandomInt(0, BotAI.BotCombatSkill * BotAI.BotCombatSkill) > 0;
 	local needShove = BotAI.needOil;
 
 	if(BotAI.IsEntitySurvivorBot(victim) && BotAI.UseTarget != null && BotAI.NeedGasFinding && needShove && RandomInt(0, 4) > 0) {
@@ -945,14 +950,14 @@
 }
 
 ::BotAI.Events.OnGameEvent_round_end <- function(event) {
-	BotAI.SaveSetting();
+	BotAI.SaveSetting(true);
 	BotAI.SaveUseTarget();
 	BotAI.GiveUpPlayer(false);
 	BotAI.saveBackpack(true);
 }
 
 ::BotAI.Events.OnGameEvent_map_transition <- function(event) {
-	BotAI.SaveSetting();
+	BotAI.SaveSetting(true);
 	BotAI.SaveUseTarget();
 	BotAI.GiveUpPlayer(false);
 	BotAI.saveBackpack();
@@ -986,7 +991,9 @@
 		return;
 
 	if(BotAI.IsPlayerEntityValid(attacker) && attacker.IsSurvivor() && !attacker.IsDead() && IsPlayerABot(attacker)) {
-		BotAI.applyDamage(attacker, victim, 15);
+		if (BotAI.OverpoweredCombatBoost) {
+			BotAI.applyDamage(attacker, victim, 15);
+		}
 
 		if(BotAI.IsAlive(victim)) {
 			BotAI.applyPushVelocity(attacker, victim);
@@ -1223,6 +1230,7 @@ function VSLib::EasyLogic::OnTakeDamage::BotAITakeDamage(damageTable) {
 	local attacker = damageTable.Attacker;
 	local inflictor = damageTable.Inflictor;
 	local victim = damageTable.Victim;
+	local overpoweredBoost = BotAI.OverpoweredCombatBoost;
 
 	if(BotAI.IsEntitySurvivorBot(attacker) && BotAI.IsEntityValid(BotAI.backpack(attacker))) {
 		local thing = BotAI.backpack(attacker);
@@ -1240,7 +1248,7 @@ function VSLib::EasyLogic::OnTakeDamage::BotAITakeDamage(damageTable) {
 		if(BotAI.IsPlayerEntityValid(victim) && victim.IsSurvivor() && IsPlayerABot(victim)) {
 			BotAI.setContext(victim, "BOTAI_KNOCK", 1.25);
 
-			if (BotAI.BotCombatSkill > 4) {
+				if (overpoweredBoost && BotAI.BotCombatSkill > 4) {
 				local damageReduction = (BotAI.BotCombatSkill - 4) / 4.0;
 				damageTable.DamageDone *= (1.0 - damageReduction);
 
@@ -1258,7 +1266,7 @@ function VSLib::EasyLogic::OnTakeDamage::BotAITakeDamage(damageTable) {
 				return false;
 			}
 
-			if (BotAI.AcidProtect && inflictor.GetClassname() == "insect_swarm") {
+				if (overpoweredBoost && BotAI.AcidProtect && inflictor.GetClassname() == "insect_swarm") {
 				return false;
 			}
 
@@ -1297,7 +1305,7 @@ function VSLib::EasyLogic::OnTakeDamage::BotAITakeDamage(damageTable) {
 			}
 		}
 
-		if(BotAI.FallProtect && damageTable.DamageDone >= 100) {
+			if(overpoweredBoost && BotAI.FallProtect && damageTable.DamageDone >= 100) {
 			local noneAliveEntity = (attacker == null || (attacker.GetClassname() != "player" && attacker.GetClassname() != "infected" && attacker.GetClassname() != "witch"));
 
 			if(noneAliveEntity) {
@@ -1348,22 +1356,22 @@ function VSLib::EasyLogic::OnTakeDamage::BotAITakeDamage(damageTable) {
 				} else {
 					BotAI.BotAttack(victim, attacker);
 				}
-			} else if (BotAI.FireProtect && (damageTable.DamageType & DMG_BURN)) {
+				} else if (overpoweredBoost && BotAI.FireProtect && (damageTable.DamageType & DMG_BURN)) {
 				BotAI.printlModifyReason("fire protect 1", damageTable);
 				damageTable.DamageDone = 0;
 				return false;
 			} else if (attacker.GetClassname() == "player" || attacker.GetClassname() == "witch") {
 
-			} else if (BotAI.NonAliveProtect) {
+				} else if (overpoweredBoost && BotAI.NonAliveProtect) {
 				BotAI.printlModifyReason("non alive protect 1", damageTable);
 				damageTable.DamageDone = 0;
 				return false;
 			}
-		} else if (BotAI.NonAliveProtect) {
+			} else if (overpoweredBoost && BotAI.NonAliveProtect) {
 			BotAI.printlModifyReason("non alive protect 2", damageTable);
 			damageTable.DamageDone = 0;
 			return false;
-		} else if (BotAI.FireProtect && (damageTable.DamageType & DMG_BURN)) {
+			} else if (overpoweredBoost && BotAI.FireProtect && (damageTable.DamageType & DMG_BURN)) {
 			BotAI.printlModifyReason("fire protect 2", damageTable);
 			damageTable.DamageDone = 0;
 			return false;
@@ -1405,7 +1413,7 @@ function VSLib::EasyLogic::OnTakeDamage::BotAITakeDamage(damageTable) {
 		damageTable.DamageDone *= 0.75;
 	}
 
-	if(victim != null && BotAI.IsPlayerEntityValid(attacker) && IsPlayerABot(attacker) && attacker.IsSurvivor()) {
+	if(overpoweredBoost && victim != null && BotAI.IsPlayerEntityValid(attacker) && IsPlayerABot(attacker) && attacker.IsSurvivor()) {
 		local className = victim.GetClassname();
 
 		if(className == "player") {
@@ -1434,7 +1442,7 @@ function VSLib::EasyLogic::OnTakeDamage::BotAITakeDamage(damageTable) {
 				damageTable.DamageDone *= BotAI.WitchDamageMultiplier;
 
 				if(!BotAI.witchKilling(victim) && !BotAI.witchRetreat(victim) && !BotAI.witchRunning(victim)) {
-					damageTable.DamageDone == 0;
+					damageTable.DamageDone = 0;
 					return false;
 				}
 			}

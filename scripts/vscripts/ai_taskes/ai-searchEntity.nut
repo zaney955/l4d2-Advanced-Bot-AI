@@ -43,93 +43,61 @@ class ::AITaskSearchEntity extends AITaskSingle {
 	items = {};
 	searched = [];
 
+	function setTargetEntity(player, entity) {
+		items[player] <- entity;
+		searched.append(entity);
+		return true;
+	}
+
+	function shouldPickEntity(player, entity, invPlayer, searchBody) {
+		if(!BotAI.IsEntityValid(entity) || entity.GetOwnerEntity() != null) {
+			return false;
+		}
+
+		local name = entity.GetClassname();
+		if(name in enumBombSpawn && !("slot2" in invPlayer)) {
+			return setTargetEntity(player, entity);
+		}
+
+		if(name in enumUpgradePack && !("slot3" in invPlayer)) {
+			return setTargetEntity(player, entity);
+		}
+
+		if(name in enumPills && !("slot4" in invPlayer)) {
+			return setTargetEntity(player, entity);
+		}
+
+		if(!BotAI.HasItem(player, "first_aid_kit", invPlayer) && !BotAI.HasItem(player, "defibrillator", invPlayer) && name in enumDefibrillator) {
+			return setTargetEntity(player, entity);
+		}
+
+		if(!searchBody && name in enumAidKit) {
+			return setTargetEntity(player, entity);
+		}
+
+		if(!BotAI.HasItem(player, "weapon_melee", invPlayer) && !BotAI.HasItem(player, "weapon_pistol_magnum", invPlayer) && name in enumWeaponSpawn) {
+			return setTargetEntity(player, entity);
+		}
+
+		return false;
+	}
+
 	function singleUpdateChecker(player) {
 		if(player.IsDominatedBySpecialInfected() || BotAI.IsInCombat(player) || player.IsStaggering() || player.IsIncapacitated() || player.IsHangingFromLedge()) return;
 		local invPlayer = BotAI.GetHeldItems(player);
+		local navigator = BotAI.getNavigator(player);
+		local searchBody = navigator.isMoving("searchBody$") || navigator.justDone("searchBody$");
 
 		if(player.GetEntityIndex() in BotAI.searchedEntity) {
 			foreach(entity in BotAI.searchedEntity[player.GetEntityIndex()]) {
-				if(!BotAI.IsEntityValid(entity) || entity.GetOwnerEntity() != null) continue;
-				local navigator = BotAI.getNavigator(player);
-				local searchBody = navigator.isMoving("searchBody$") || navigator.justDone("searchBody$");
-				local name = entity.GetClassname();
-
-				if(name in enumBombSpawn && !("slot2" in invPlayer)) {
-					items[player] <- entity;
-					searched.append(entity);
-					return true;
-				}
-
-				if(name in enumUpgradePack && !("slot3" in invPlayer)) {
-					items[player] <- entity;
-					searched.append(entity);
-					return true;
-				}
-
-				if(name in enumPills && !("slot4" in invPlayer)) {
-					items[player] <- entity;
-					searched.append(entity);
-					return true;
-				}
-
-				if(!BotAI.HasItem(player, "first_aid_kit", invPlayer) && !BotAI.HasItem(player, "defibrillator", invPlayer) && name in enumDefibrillator) {
-					items[player] <- entity;
-					searched.append(entity);
-					return true;
-				}
-
-				if(!searchBody && name in enumAidKit) {
-					items[player] <- entity;
-					searched.append(entity);
-					return true;
-				}
-
-				if(!BotAI.HasItem(player, "weapon_melee", invPlayer) && !BotAI.HasItem(player, "weapon_pistol_magnum", invPlayer) && name in enumWeaponSpawn) {
-					items[player] <- entity;
-					searched.append(entity);
+				if(shouldPickEntity(player, entity, invPlayer, searchBody)) {
 					return true;
 				}
 			}
 		}
 
 		foreach(entity in BotAI.humanSearchedEntity) {
-			if(!BotAI.IsEntityValid(entity) || entity.GetOwnerEntity() != null) continue;
-			local navigator = BotAI.getNavigator(player);
-			local searchBody = navigator.isMoving("searchBody$") || navigator.justDone("searchBody$");
-			local name = entity.GetClassname();
-			if(name in enumBombSpawn && !("slot2" in invPlayer)) {
-				items[player] <- entity;
-				searched.append(entity);
-				return true;
-			}
-
-			if(name in enumUpgradePack && !("slot3" in invPlayer)) {
-				items[player] <- entity;
-				searched.append(entity);
-				return true;
-			}
-
-			if(name in enumPills && !("slot4" in invPlayer)) {
-				items[player] <- entity;
-				searched.append(entity);
-				return true;
-			}
-
-			if(!BotAI.HasItem(player, "first_aid_kit", invPlayer) && !BotAI.HasItem(player, "defibrillator", invPlayer) && name in enumDefibrillator) {
-				items[player] <- entity;
-				searched.append(entity);
-				return true;
-			}
-
-			if(!searchBody && name in enumAidKit) {
-				items[player] <- entity;
-				searched.append(entity);
-				return true;
-			}
-
-			if(!BotAI.HasItem(player, "weapon_melee", invPlayer) && !BotAI.HasItem(player, "weapon_pistol_magnum", invPlayer) && name in enumWeaponSpawn) {
-				items[player] <- entity;
-				searched.append(entity);
+			if(shouldPickEntity(player, entity, invPlayer, searchBody)) {
 				return true;
 			}
 		}

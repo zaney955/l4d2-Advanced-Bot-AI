@@ -154,7 +154,7 @@ class::Navigator {
 			botskill = 4;
 		}
 
-		if (botskill > 2 || BotAI.HasTank) {
+			if (BotAI.OverpoweredCombatBoost && (botskill > 2 || BotAI.HasTank)) {
 			speed += 0.2;
 
 			foreach(danger in BotAI.SpecialList) {
@@ -172,9 +172,9 @@ class::Navigator {
 			}
 		}
 
-		if (movingID.find("$") != null) {
-			speed += 0.1 * BotAI.BotCombatSkill;
-		}
+			if (BotAI.OverpoweredCombatBoost && movingID.find("$") != null) {
+				speed += 0.1 * BotAI.BotCombatSkill;
+			}
 
 		NetProps.SetPropFloat(player, "m_flLaggedMovementValue", speed);
 		player.SetFriction(friction);
