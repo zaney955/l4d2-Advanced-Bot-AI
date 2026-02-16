@@ -997,30 +997,74 @@ function EasyLogic::OnUserCommand::BotAICommands( player, args, text ) {
 	if (typeof player == "VSLIB_PLAYER")
 		player = player.GetBaseEntity();
 
-	if(text.find("slot") != null) {
+	local navCommand = null;
+	if(text == "menu_pre")
+		navCommand = "pre";
+	else if(text == "menu_next")
+		navCommand = "next";
+	else if(text == "menu_back")
+		navCommand = "back";
+
+	if(navCommand != null) {
+		local nav = null;
+		local callback = null;
+		local menuPlayer = null;
+
 		foreach(menu in BotAI.MainMenu) {
 			if(menu._player.GetBaseEntity() != player)
 				continue;
-			local slot = text.slice(4);
-			slot = slot.tointeger();
-			slot -= menu._skipOptions;
-			local close = true;
-			if(slot > 0 && menu._options.len() >= slot) {
-				menu._curSel = slot;
+			menuPlayer = menu._player;
+			break;
+		}
 
-				local t = { p = menu._player, idx = menu._curSel,
-				val = menu._options[menu._curSel].text, callb = menu._options[menu._curSel].callback };
-				if(menu._options[menu._curSel].callback == BotEmptyCmd)
-					close = false;
-				::BotAI.Timers.AddTimer(0.1, 0, @(tbl) tbl.callb(tbl.p, tbl.idx, tbl.val), t);
+		if("MenuNavigation" in BotAI && player.GetEntityIndex() in BotAI.MenuNavigation)
+			nav = BotAI.MenuNavigation[player.GetEntityIndex()];
 
-				if(close) {
-					BotAI.playSound(player, "buttons/button14.wav");
-					menu.CloseMenu();
+		if(nav != null) {
+			if(navCommand == "next")
+				callback = nav.next;
+			else
+				callback = nav.pre;
+		}
 
-					if (menu._autoDetach)
-						menu.Detach();
-				}
+		if(callback != null && menuPlayer != null) {
+			local t = { p = menuPlayer, idx = 0, val = "", callb = callback };
+			::BotAI.Timers.AddTimer(0.1, 0, @(tbl) tbl.callb(tbl.p, tbl.idx, tbl.val), t);
+			BotAI.playSound(player, "buttons/button14.wav");
+			return;
+		}
+
+		if(navCommand == "back")
+			BotExitMenuCmd(player, "", "");
+
+		return;
+	}
+
+	if(text.find("slot") == null)
+		return;
+
+	foreach(menu in BotAI.MainMenu) {
+		if(menu._player.GetBaseEntity() != player)
+			continue;
+
+		local slot = text.slice(4).tointeger();
+		slot -= menu._skipOptions;
+		local close = true;
+		if(slot > 0 && menu._options.len() >= slot) {
+			menu._curSel = slot;
+
+			local t = { p = menu._player, idx = menu._curSel,
+			val = menu._options[menu._curSel].text, callb = menu._options[menu._curSel].callback };
+			if(menu._options[menu._curSel].callback == BotEmptyCmd)
+				close = false;
+			::BotAI.Timers.AddTimer(0.1, 0, @(tbl) tbl.callb(tbl.p, tbl.idx, tbl.val), t);
+
+			if(close) {
+				BotAI.playSound(player, "buttons/button14.wav");
+				menu.CloseMenu();
+
+				if (menu._autoDetach)
+					menu.Detach();
 			}
 		}
 	}

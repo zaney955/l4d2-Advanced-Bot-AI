@@ -136,6 +136,28 @@ class ::AITaskMyTask extends AITaskSingle {
 3. Bind option in the menu construction flow.
 4. Persist setting when toggled.
 
+### Menu Input Model (Current)
+
+- Menu keybinds are set in `BotAI::buildMenu()` (`ai_lib/ai_command.nut`).
+- Number selection:
+  - `1-9` -> `slot1..slot9`
+  - `0` -> `slot10; scripted_user_func menu_back`
+- Page navigation:
+  - `-` -> `scripted_user_func menu_pre`
+  - `=` -> `scripted_user_func menu_next`
+- Navigation dispatch uses `BotAI.MenuNavigation` callbacks (set per page in `ai_command.nut`), not visible nav menu entries.
+- Back behavior (`menu_back`, in `ai_lib/ai_events.nut`):
+  - If current page has a registered `pre` callback, go to previous page
+  - Otherwise close menu (`BotExitMenuCmd`)
+
+### Menu Development Constraints
+
+- Keep actionable options within the visible key range (`1-9`); do not create an effective `11th` numbered option.
+- Do not use visible `8/9/0` entries for page navigation; keep navigation on `-`, `=`, `0`.
+- Design pages with the current convention: `1-9` for actions, `0` as back.
+- If a page needs more choices, split into additional pages instead of extending a single page.
+- `buildMenu()` writes player key binds while menu is open; avoid adding extra key overrides unless necessary.
+
 ## Damage and Combat Notes
 
 Damage multipliers are applied in event-based damage flow (`ai_events.nut`, `OnTakeDamage` path).
@@ -165,8 +187,12 @@ Main multipliers:
 1. Launch L4D2 local server.
 2. Reload map (`map <mapname>`).
 3. Exercise `!botmenu` and relevant chat commands.
-4. Verify settings persistence across map transition/round end.
-5. Validate bot behavior under normal and high-pressure encounters.
+4. Verify menu controls:
+   - `1-9` select options
+   - `0` returns/closes
+   - `-` previous page, `=` next page
+5. Verify settings persistence across map transition/round end.
+6. Validate bot behavior under normal and high-pressure encounters.
 
 ## Performance Guidance
 
@@ -179,4 +205,3 @@ Main multipliers:
 
 - Project code: MIT License
 - VSLib: MIT License (keep copyright notices)
-

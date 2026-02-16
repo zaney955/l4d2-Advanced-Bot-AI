@@ -1010,6 +1010,19 @@ function BotAI::registerMenu() {
 
 ::BotEmptyCmd <- function ( speaker, args  , args1) {}
 
+function BotAI::setMenuNavigation(player, preCallback = null, nextCallback = null) {
+	if (typeof player == "VSLIB_PLAYER")
+		player = player.GetBaseEntity();
+
+	if(!("MenuNavigation" in BotAI))
+		BotAI.MenuNavigation <- {};
+
+	BotAI.MenuNavigation[player.GetEntityIndex()] <- {
+		pre = preCallback,
+		next = nextCallback
+	};
+}
+
 function BotAI::buildMenu(player, topOptions, bottomOptions) {
 	// 为什么在这里要再SetLayout一次呢? 因为旧时代遗老mod Vscript Loader已经没有存在的必要了, 它的加载顺序滞后导致其他依赖Vslib的模组无法正常加载HUD, 需要有人来制裁
 	HUDSetLayout( ::VSLib.HUD._hud );
@@ -1022,7 +1035,10 @@ function BotAI::buildMenu(player, topOptions, bottomOptions) {
 	SendToConsole("bind \"7\" \"slot7; scripted_user_func slot7\"");
 	SendToConsole("bind \"8\" \"slot8; scripted_user_func slot8\"");
 	SendToConsole("bind \"9\" \"slot9; scripted_user_func slot9\"");
-	SendToConsole("bind \"0\" \"slot10; scripted_user_func slot10\"");
+	SendToConsole("bind \"0\" \"slot10; scripted_user_func menu_back\"");
+	SendToConsole("bind \"-\" \"scripted_user_func menu_pre\"");
+	SendToConsole("bind \"=\" \"scripted_user_func menu_next\"");
+	BotAI.setMenuNavigation(player, null, null);
 
 	BotAI.playSound(player, "buttons/button14.wav");
 	BotExitMenuCmd(player, "", "");
@@ -1069,12 +1085,12 @@ function BotAI::displayOptionMenu(player, args, args1) {
 	local function bot(menu) {
 		menu.AddOption(BotAI.fromParams(BotAI.PathFinding, lang)+I18n.getTranslationKeyByLang(lang, "menu_pathfinding"), BotPathFindingCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.UnStick, lang)+I18n.getTranslationKeyByLang(lang, "menu_unstick"), BotUnstickCmd);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_next"), BotAI.displayOptionMenuNext);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_damage_settings"), BotAI.displayOptionMenuDamageSettings);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_banned_weapons"), BotAI.displayOptionMenuBannedWeapons);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, null, BotAI.displayOptionMenuNext);
 }
 
 function BotAI::displayOptionMenuNext(player, args, args1) {
@@ -1088,57 +1104,35 @@ function BotAI::displayOptionMenuNext(player, args, args1) {
 	}
 
 	local function bot(menu) {
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_damage_settings"), BotAI.displayOptionMenuDamageSettings);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_banned_weapons"), BotAI.displayOptionMenuBannedWeapons);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_next"), BotAI.displayOptionMenuNextNext);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_non_alive_damage") + ": " + (BotAI.NonAliveDamageMultiplier).tostring(), BotAI.displayOptionMenuBotNonAliveDamage);
+		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_save_teleport") + ": " + (BotAI.SaveTeleport).tostring(), BotAI.displayOptionMenuBotTeleport);
+		menu.AddOption(BotAI.fromParams(BotAI.FallProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fall_protect"), BotFallProtectCmd);
+		menu.AddOption(BotAI.fromParams(BotAI.FireProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fire_protect"), BotFireProtectCmd);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, BotAI.displayOptionMenuNextNext);
 }
 
 function BotAI::displayOptionMenuNextNext(player, args, args1) {
 	local lang = BotAI.language;
 	local function top(menu) {
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_non_alive_damage") + ": " + (BotAI.NonAliveDamageMultiplier).tostring(), BotAI.displayOptionMenuBotNonAliveDamage);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_save_teleport") + ": " + (BotAI.SaveTeleport).tostring(), BotAI.displayOptionMenuBotTeleport);
-		menu.AddOption(BotAI.fromParams(BotAI.FallProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fall_protect"), BotFallProtectCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.FireProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fire_protect"), BotFireProtectCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.AcidProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_acid_protect"), BotAcidProtectCmd);
-	}
-
-	local function bot(menu) {
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNext);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_next"), BotAI.displayOptionMenuNextNextNext);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
-	}
-
-	BotAI.buildMenu(player, top, bot);
-}
-
-function BotAI::displayOptionMenuNextNextNext(player, args, args1) {
-	local lang = BotAI.language;
-	local function top(menu) {
 		menu.AddOption(BotAI.fromParams(BotAI.NonAliveProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_non_alive_protect"), BotNonAliveProtectCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.PassingItems, lang)+I18n.getTranslationKeyByLang(lang, "menu_passing_item"), BotPassingItemsCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.CloseSaferoomDoor, lang)+I18n.getTranslationKeyByLang(lang, "menu_close_door"), BotCloseSaferoomDoorCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.NeedThrowPipeBomb, lang)+I18n.getTranslationKeyByLang(lang, "menu_throw_pipe"), BotThrowPipeBombCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.NeedThrowMolotov, lang)+I18n.getTranslationKeyByLang(lang, "menu_throw_fire"), BotThrowFireCmd);
 	}
 
 	local function bot(menu) {
+		menu.AddOption(BotAI.fromParams(BotAI.NeedThrowMolotov, lang)+I18n.getTranslationKeyByLang(lang, "menu_throw_fire"), BotThrowFireCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.TeleportToSaferoom, lang)+I18n.getTranslationKeyByLang(lang, "menu_teleport_to_saferoom"), BotTeleportToSaferoomCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.SpreadCompensation, lang)+I18n.getTranslationKeyByLang(lang, "menu_spread_compensation"), BotSpreadCompensationCmd);
 		menu.AddOption(BotAI.fromParams(BotAI.OverpoweredCombatBoost, lang)+I18n.getTranslationKeyByLang(lang, "menu_overpowered_combat_boost"), BotOverpoweredCombatBoostCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNextNext);
-		menu.AddOption("emp_1", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuNext, null);
 }
 
 function BotAI::displayOptionMenuDamageSettings(player, args, args1) {
@@ -1148,18 +1142,18 @@ function BotAI::displayOptionMenuDamageSettings(player, args, args1) {
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_special_damage") + ": " + (BotAI.SpecialDamageMultiplier).tostring(), BotAI.displayOptionMenuBotSpecialDamage);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_tank_damage") + ": " + (BotAI.TankDamageMultiplier).tostring(), BotAI.displayOptionMenuBotTankDamage);
 		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_common_damage") + ": " + (BotAI.CommonDamageMultiplier).tostring(), BotAI.displayOptionMenuBotCommonDamage);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_non_alive_damage") + ": " + (BotAI.NonAliveDamageMultiplier).tostring(), BotAI.displayOptionMenuBotNonAliveDamage);
+		menu.AddOption("emp_0", BotEmptyCmd);
 	}
 
 	local function bot(menu) {
 		menu.AddOption("emp_0", BotEmptyCmd);
 		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
 		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("emp_0", BotEmptyCmd);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
 }
 
 function BotAI::displayOptionMenuBotCombat(player, args, args1) {
@@ -1184,8 +1178,14 @@ function BotAI::displayOptionMenuBotCombat(player, args, args1) {
 	local function pro(player, args, args1) {
 		combatSkill(5);
 	}
+	local function proplus(player, args, args1) {
+		combatSkill(6);
+	}
 	local function promax(player, args, args1) {
 		combatSkill(7);
+	}
+	local function promax_(player, args, args1) {
+		combatSkill(8);
 	}
 	local function promaxplus(player, args, args1) {
 		combatSkill(10);
@@ -1200,14 +1200,14 @@ function BotAI::displayOptionMenuBotCombat(player, args, args1) {
 	}
 
 	local function bot(menu) {
+		menu.AddOption("6", proplus);
 		menu.AddOption("7", promax);
+		menu.AddOption("8", promax_);
 		menu.AddOption("10", promaxplus);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
 }
 
 function BotAI::displayOptionMenuBotDistance(player, args, args1) {
@@ -1233,9 +1233,15 @@ function BotAI::displayOptionMenuBotDistance(player, args, args1) {
 		followDistance(700);
 	}
 	local function pro_(player, args, args1) {
-		followDistance(1000);
+		followDistance(850);
 	}
 	local function pro__(player, args, args1) {
+		followDistance(1000);
+	}
+	local function pro___(player, args, args1) {
+		followDistance(1250);
+	}
+	local function pro____(player, args, args1) {
 		followDistance(999999);
 	}
 
@@ -1248,14 +1254,14 @@ function BotAI::displayOptionMenuBotDistance(player, args, args1) {
 	}
 
 	local function bot(menu) {
-		menu.AddOption("1000hu(19.1m)", pro_);
-		menu.AddOption("999999hu(~19050m)", pro__);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("850hu(16.2m)", pro_);
+		menu.AddOption("1000hu(19.1m)", pro__);
+		menu.AddOption("1250hu(23.8m)", pro___);
+		menu.AddOption("999999hu(~19050m)", pro____);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
 }
 
 function BotAI::displayOptionMenuBotFollowTeleport(player, args, args1) {
@@ -1281,9 +1287,15 @@ function BotAI::displayOptionMenuBotFollowTeleport(player, args, args1) {
 		followDistance(1000);
 	}
 	local function pro_(player, args, args1) {
-		followDistance(1250);
+		followDistance(850);
 	}
 	local function pro__(player, args, args1) {
+		followDistance(1250);
+	}
+	local function pro___(player, args, args1) {
+		followDistance(1500);
+	}
+	local function pro____(player, args, args1) {
 		followDistance(999999);
 	}
 
@@ -1296,14 +1308,14 @@ function BotAI::displayOptionMenuBotFollowTeleport(player, args, args1) {
 	}
 
 	local function bot(menu) {
-		menu.AddOption("1250hu(23.8m)", pro_);
-		menu.AddOption("999999hu(~19050m)", pro__);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("850hu(16.2m)", pro_);
+		menu.AddOption("1250hu(23.8m)", pro__);
+		menu.AddOption("1500hu(28.6m)", pro___);
+		menu.AddOption("999999hu(~19050m)", pro____);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
 }
 
 function BotAI::displayOptionMenuBotTeleport(player, args, args1) {
@@ -1329,6 +1341,15 @@ function BotAI::displayOptionMenuBotTeleport(player, args, args1) {
 		teleportDistance(17);
 	}
 	local function pro_(player, args, args1) {
+		teleportDistance(25);
+	}
+	local function pro__(player, args, args1) {
+		teleportDistance(35);
+	}
+	local function pro___(player, args, args1) {
+		teleportDistance(50);
+	}
+	local function pro____(player, args, args1) {
 		teleportDistance(999);
 	}
 
@@ -1341,14 +1362,14 @@ function BotAI::displayOptionMenuBotTeleport(player, args, args1) {
 	}
 
 	local function bot(menu) {
-		menu.AddOption("999(s)", pro_);
-		menu.AddOption("emp_1", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNextNext);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("25(s)", pro_);
+		menu.AddOption("35(s)", pro__);
+		menu.AddOption("50(s)", pro___);
+		menu.AddOption("999(s)", pro____);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuNext, null);
 }
 
 function BotAI::displayOptionMenuBotWitchDamage(player, args, args1) {
@@ -1380,6 +1401,12 @@ function BotAI::displayOptionMenuBotWitchDamage(player, args, args1) {
 	local function pro__(player, args, args1) {
 		damageMultiplier(2.0);
 	}
+	local function pro___(player, args, args1) {
+		damageMultiplier(2.5);
+	}
+	local function pro____(player, args, args1) {
+		damageMultiplier(3.0);
+	}
 
 	local function top(menu) {
 		menu.AddOption("0.2", normal);
@@ -1392,12 +1419,12 @@ function BotAI::displayOptionMenuBotWitchDamage(player, args, args1) {
 	local function bot(menu) {
 		menu.AddOption("1.5", pro_);
 		menu.AddOption("2.0", pro__);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNext);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("2.5", pro___);
+		menu.AddOption("3.0", pro____);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuDamageSettings, null);
 }
 
 function BotAI::displayOptionMenuBotSpecialDamage(player, args, args1) {
@@ -1429,6 +1456,12 @@ function BotAI::displayOptionMenuBotSpecialDamage(player, args, args1) {
 	local function pro__(player, args, args1) {
 		damageMultiplier(2.0);
 	}
+	local function pro___(player, args, args1) {
+		damageMultiplier(2.5);
+	}
+	local function pro____(player, args, args1) {
+		damageMultiplier(3.0);
+	}
 
 	local function top(menu) {
 		menu.AddOption("0.2", normal);
@@ -1441,12 +1474,12 @@ function BotAI::displayOptionMenuBotSpecialDamage(player, args, args1) {
 	local function bot(menu) {
 		menu.AddOption("1.5", pro_);
 		menu.AddOption("2.0", pro__);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNext);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("2.5", pro___);
+		menu.AddOption("3.0", pro____);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuDamageSettings, null);
 }
 
 function BotAI::displayOptionMenuBotTankDamage(player, args, args1) {
@@ -1478,6 +1511,12 @@ function BotAI::displayOptionMenuBotTankDamage(player, args, args1) {
 	local function pro__(player, args, args1) {
 		damageMultiplier(2.0);
 	}
+	local function pro___(player, args, args1) {
+		damageMultiplier(2.5);
+	}
+	local function pro____(player, args, args1) {
+		damageMultiplier(3.0);
+	}
 
 	local function top(menu) {
 		menu.AddOption("0.2", normal);
@@ -1490,12 +1529,12 @@ function BotAI::displayOptionMenuBotTankDamage(player, args, args1) {
 	local function bot(menu) {
 		menu.AddOption("1.5", pro_);
 		menu.AddOption("2.0", pro__);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNextNext);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("2.5", pro___);
+		menu.AddOption("3.0", pro____);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuDamageSettings, null);
 }
 
 function BotAI::displayOptionMenuBotCommonDamage(player, args, args1) {
@@ -1527,6 +1566,12 @@ function BotAI::displayOptionMenuBotCommonDamage(player, args, args1) {
 	local function pro__(player, args, args1) {
 		damageMultiplier(2.0);
 	}
+	local function pro___(player, args, args1) {
+		damageMultiplier(2.5);
+	}
+	local function pro____(player, args, args1) {
+		damageMultiplier(3.0);
+	}
 
 	local function top(menu) {
 		menu.AddOption("0.2", normal);
@@ -1539,12 +1584,12 @@ function BotAI::displayOptionMenuBotCommonDamage(player, args, args1) {
 	local function bot(menu) {
 		menu.AddOption("1.5", pro_);
 		menu.AddOption("2.0", pro__);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNextNext);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("2.5", pro___);
+		menu.AddOption("3.0", pro____);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuDamageSettings, null);
 }
 
 function BotAI::displayOptionMenuBotNonAliveDamage(player, args, args1) {
@@ -1576,6 +1621,12 @@ function BotAI::displayOptionMenuBotNonAliveDamage(player, args, args1) {
 	local function pro__(player, args, args1) {
 		damageMultiplier(2.0);
 	}
+	local function pro___(player, args, args1) {
+		damageMultiplier(2.5);
+	}
+	local function pro____(player, args, args1) {
+		damageMultiplier(3.0);
+	}
 
 	local function top(menu) {
 		menu.AddOption("0.2", normal);
@@ -1588,39 +1639,43 @@ function BotAI::displayOptionMenuBotNonAliveDamage(player, args, args1) {
 	local function bot(menu) {
 		menu.AddOption("1.5", pro_);
 		menu.AddOption("2.0", pro__);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenuNextNext);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		menu.AddOption("2.5", pro___);
+		menu.AddOption("3.0", pro____);
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuDamageSettings, null);
 }
 
 function BotAI::displayOptionMenuBannedWeapons(player, args, args1) {
 	local lang = BotAI.language;
-	local function top(menu) {
-		local scoutStatus = "sniper_scout" in BotAI.BannedWeapons;
-		local awpStatus = "sniper_awp" in BotAI.BannedWeapons;
+	if(!BotAI.BannedWeapons)
+		BotAI.BannedWeapons = {};
 
-		menu.AddOption((scoutStatus ? "[x] " : "[  ] ") + I18n.getTranslationKeyByLang(lang, "weapon_scout"), function(p, a, a1) {
-			local args = ["sniper_scout"];
+	local function addWeaponToggle(menu, weaponName, displayName) {
+		local status = weaponName in BotAI.BannedWeapons;
+		menu.AddOption((status ? "[x] " : "[  ] ") + displayName, function(p, a, a1) {
+			local args = [weaponName];
 			BotBannedWeaponCmd(p, args, "");
 		});
-		menu.AddOption((awpStatus ? "[x] " : "[  ] ") + I18n.getTranslationKeyByLang(lang, "weapon_awp"), function(p, a, a1) {
-			local args = ["sniper_awp"];
-			BotBannedWeaponCmd(p, args, "");
-		});
+	}
+	local function top(menu) {
+		addWeaponToggle(menu, "sniper_scout", I18n.getTranslationKeyByLang(lang, "weapon_scout"));
+		addWeaponToggle(menu, "sniper_awp", I18n.getTranslationKeyByLang(lang, "weapon_awp"));
+		addWeaponToggle(menu, "sniper_military", "Military Sniper");
+		addWeaponToggle(menu, "hunting_rifle", "Hunting Rifle");
+		addWeaponToggle(menu, "grenade_launcher", "Grenade Launcher");
 	}
 
 	local function bot(menu) {
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_pre"), BotAI.displayOptionMenu);
-		menu.AddOption("emp_0", BotEmptyCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_exit"), BotExitMenuCmd);
+		addWeaponToggle(menu, "rifle_m60", "M60");
+		addWeaponToggle(menu, "autoshotgun", "Auto Shotgun");
+		addWeaponToggle(menu, "shotgun_spas", "SPAS Shotgun");
+		addWeaponToggle(menu, "chainsaw", "Chainsaw");
 	}
 
 	BotAI.buildMenu(player, top, bot);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
 }
 
 ::BotExitMenuCmd <- function(speaker, args, args1) {
@@ -1630,4 +1685,6 @@ function BotAI::displayOptionMenuBannedWeapons(player, args, args1) {
 				menu.Detach();
 	}
 	BotAI.MainMenu = {};
+	if("MenuNavigation" in BotAI)
+		BotAI.MenuNavigation = {};
 }

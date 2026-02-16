@@ -162,7 +162,7 @@ function I18n::init() {
 		menu_pre = "Previous page",
 		menu_enable = "√ ",
 		menu_disable = "✕ ",
-		menu_exit = "Cancel",
+		menu_exit = "Back",
 
 		menu_banned_weapons = "Banned Weapons",
 		menu_damage_settings = "Damage Settings",
@@ -287,7 +287,7 @@ function I18n::init() {
 		menu_disable = "✕ ",
 		menu_next = "下一页",
 		menu_pre = "上一页",
-		menu_exit = "取消",
+		menu_exit = "返回",
 
 		menu_banned_weapons = "禁用武器",
 		menu_damage_settings = "伤害设置",
@@ -413,7 +413,7 @@ function I18n::init() {
 		menu_disable = "✕ ",
 		menu_next = "下一頁",
 		menu_pre = "上一頁",
-		menu_exit = "取消",
+		menu_exit = "返回",
 
 		menu_banned_weapons = "禁用武器",
 		menu_damage_settings = "傷害設置",
