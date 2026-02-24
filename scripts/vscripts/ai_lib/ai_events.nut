@@ -1134,6 +1134,10 @@ function ChatTriggers::botmenu( player, args, text ) {
 	BotMenuCmd( player, args, text );
 }
 
+function ChatTriggers::botmenusort( player, args, text ) {
+	BotMenuSortCmd( player, args, text );
+}
+
 function ChatTriggers::botkeepalive( player, args, text ) {
 	BotAliveCmd( player, args, text );
 }

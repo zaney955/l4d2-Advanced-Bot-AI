@@ -175,11 +175,13 @@ if (!("VSLib" in getroottable())) {
 		RevivedPlayer = {}
 		BeingRevivedPlayer = {}
 
-		MainMenu = {}
+			MainMenu = {}
+			MenuReturnPage = {}
 
-		BotDebugMode = false
-		BotCombatSkill = 0
-		NeedGasFinding = true
+			BotDebugMode = false
+			MenuOptionOrder = []
+			BotCombatSkill = 0
+			NeedGasFinding = true
 		NeedThrowMolotov = true
 		NeedThrowPipeBomb = true
 		Immunity = false
@@ -513,6 +515,22 @@ BotAI.witchMeleeDmg <- -2145386492;
 }
 
 ::BotAI.BuildSettingText <- function() {
+	local menuOptionOrder = "[";
+	local firstMenuOption = true;
+	if(typeof BotAI.MenuOptionOrder == "array") {
+		foreach(menuId in BotAI.MenuOptionOrder) {
+			if(typeof menuId != "string") {
+				continue;
+			}
+			if(!firstMenuOption) {
+				menuOptionOrder += ", ";
+			}
+			menuOptionOrder += "\"" + menuId + "\"";
+			firstMenuOption = false;
+		}
+	}
+	menuOptionOrder += "]";
+
 	local settingList =
 		"BotCombatSkill = " + BotAI.BotCombatSkill.tostring() +
 		"\nFollowRange = " + BotAI.FollowRange.tostring() +
@@ -546,7 +564,8 @@ BotAI.witchMeleeDmg <- -2145386492;
 		"\nTeleportToSaferoom = " + BotAI.TeleportToSaferoom.tostring() +
 		"\nSpreadCompensation = " + BotAI.SpreadCompensation.tostring() +
 		"\nOverpoweredCombatBoost = " + BotAI.OverpoweredCombatBoost.tostring() +
-		"\nBackPack = " + BotAI.BackPack.tostring();
+		"\nBackPack = " + BotAI.BackPack.tostring() +
+		"\nMenuOptionOrder = " + menuOptionOrder;
 
 	return settingList;
 }
@@ -614,6 +633,10 @@ function BotAI::removeNullString(array) {
 			local compiledscript = compilestring("BotAI." + setting);
 			compiledscript();
 		}
+	}
+
+	if(typeof BotAI.MenuOptionOrder != "array") {
+		BotAI.MenuOptionOrder = [];
 	}
 
 	local admins_fileContents = FileToString("advanced bot ai/admins.txt");

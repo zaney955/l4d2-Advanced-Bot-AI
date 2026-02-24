@@ -756,6 +756,155 @@ function BotAI::getDamageMultiplier(args, minValue = -16.0, maxValue = 999.0) {
 	BotAI.SaveSetting();
 	BotExitMenuCmd(speaker, args, args1);
 }
+
+function BotAI::joinStringArray(values, delimiter = ", ") {
+	local output = "";
+	foreach(index, value in values) {
+		if(index > 0) {
+			output += delimiter;
+		}
+		output += value.tostring();
+	}
+	return output;
+}
+
+function BotAI::getDefaultMainMenuOptionOrder() {
+	return [
+		"bot_skill",
+		"follow_range",
+		"teleport_range",
+		"allow_melee",
+		"immunity",
+		"pathfinding",
+		"unstick",
+		"damage_settings",
+		"banned_weapons",
+		"find_gas",
+		"bot_alive",
+		"defibrillator",
+		"use_upgrades",
+		"backpack",
+		"non_alive_damage",
+		"save_teleport",
+		"fall_protect",
+		"fire_protect",
+		"acid_protect",
+		"non_alive_protect",
+		"passing_item",
+		"close_door",
+		"throw_pipe",
+		"throw_fire",
+		"teleport_to_saferoom",
+		"spread_compensation",
+		"overpowered_combat_boost"
+	];
+}
+
+function BotAI::normalizeMainMenuOrder(orderList) {
+	local validIds = {};
+	foreach(id in BotAI.getDefaultMainMenuOptionOrder()) {
+		validIds[id] <- true;
+	}
+
+	local normalized = [];
+	local exists = {};
+	if(typeof orderList != "array") {
+		return normalized;
+	}
+
+	foreach(item in orderList) {
+		if(typeof item != "string") {
+			continue;
+		}
+		local id = strip(item.tolower());
+		if(id == "" || !(id in validIds) || id in exists) {
+			continue;
+		}
+		exists[id] <- true;
+		normalized.append(id);
+	}
+
+	return normalized;
+}
+
+::BotMenuSortCmd <- function ( speaker, args, args1 ) {
+	local player = speaker;
+	if (typeof player == "VSLIB_PLAYER")
+		player = player.GetBaseEntity();
+
+	if(!ABA_IsAdmin(speaker)) {
+		BotAI.SendPlayer(player, "botai_admin_only");
+		return;
+	}
+
+	local input = "";
+	foreach(idx, value in args) {
+		input += value + " ";
+	}
+	input = strip(input.tolower());
+
+	local allIds = BotAI.getDefaultMainMenuOptionOrder();
+	local appliedIds = BotAI.normalizeMainMenuOrder(BotAI.MenuOptionOrder);
+	if(input == "" || input == "show") {
+		BotAI.SendPlayerNoPrefix(player, "[BotAI] !botmenusort reset");
+		BotAI.SendPlayerNoPrefix(player, "[BotAI] !botmenusort id1,id2,id3");
+		BotAI.SendPlayerNoPrefix(player, "[BotAI] IDs: " + BotAI.joinStringArray(allIds));
+		if(appliedIds.len() > 0) {
+			BotAI.SendPlayerNoPrefix(player, "[BotAI] current order: " + BotAI.joinStringArray(appliedIds));
+		} else {
+			BotAI.SendPlayerNoPrefix(player, "[BotAI] current order: default");
+		}
+		return;
+	}
+
+	if(input == "reset") {
+		BotAI.MenuOptionOrder = [];
+		BotAI.SaveSetting();
+		BotAI.SendPlayerNoPrefix(player, "[BotAI] menu order reset to default.");
+		return;
+	}
+
+	local normalizedInput = BotAI.StringReplace(input, "，", ",");
+	normalizedInput = BotAI.StringReplace(normalizedInput, " ", ",");
+	local splitIds = split(normalizedInput, ",");
+	local validIds = {};
+	foreach(id in allIds) {
+		validIds[id] <- true;
+	}
+
+	local customOrder = [];
+	local invalidIds = [];
+	local exists = {};
+	foreach(rawId in splitIds) {
+		local id = strip(rawId);
+		if(id == "") {
+			continue;
+		}
+		if(!(id in validIds)) {
+			invalidIds.append(id);
+			continue;
+		}
+		if(id in exists) {
+			continue;
+		}
+		exists[id] <- true;
+		customOrder.append(id);
+	}
+
+	if(customOrder.len() == 0) {
+		BotAI.SendPlayerNoPrefix(player, "[BotAI] no valid menu id found.");
+		BotAI.SendPlayerNoPrefix(player, "[BotAI] IDs: " + BotAI.joinStringArray(allIds));
+		return;
+	}
+
+	BotAI.MenuOptionOrder = customOrder;
+	BotAI.SaveSetting();
+	BotAI.SendPlayerNoPrefix(player, "[BotAI] menu order updated: " + BotAI.joinStringArray(customOrder));
+	if(invalidIds.len() > 0) {
+		BotAI.SendPlayerNoPrefix(player, "[BotAI] ignored ids: " + BotAI.joinStringArray(invalidIds));
+	}
+}
+
 function BotAI::registerMenu() {
 	local botMenu = ::HoloMenu.Menu("menu_title", BUTTON_GRENADE1);
 	local function showMenu(player) {
@@ -1072,67 +1221,189 @@ function BotAI::fromParams(params, lang) {
 		return I18n.getTranslationKeyByLang(lang, "menu_disable");
 }
 
-function BotAI::displayOptionMenu(player, args, args1) {
+function BotAI::setMenuReturnPage(player, pageIndex) {
+	if (typeof player == "VSLIB_PLAYER")
+		player = player.GetBaseEntity();
+
+	if(player == null || !BotAI.IsPlayerEntityValid(player))
+		return;
+
+	if(!("MenuReturnPage" in BotAI))
+		BotAI.MenuReturnPage <- {};
+
+	BotAI.MenuReturnPage[player.GetEntityIndex()] <- pageIndex;
+}
+
+function BotAI::getMenuReturnPage(player) {
+	if (typeof player == "VSLIB_PLAYER")
+		player = player.GetBaseEntity();
+
+	if(player == null)
+		return 0;
+
+	if(!("MenuReturnPage" in BotAI))
+		return 0;
+
+	local key = player.GetEntityIndex();
+	if(!(key in BotAI.MenuReturnPage))
+		return 0;
+
+	return BotAI.MenuReturnPage[key];
+}
+
+function BotAI::displayOptionMenuReturn(player, args = "", args1 = "") {
+	BotAI.displayOptionMenuPage(player, BotAI.getMenuReturnPage(player), args, args1);
+}
+
+function BotAI::getMainMenuOptionDefs(lang) {
+	return [
+		{ id = "bot_skill", text = I18n.getTranslationKeyByLang(lang, "menu_bot_skill") + ": " + (1 + BotAI.BotCombatSkill).tostring(), callback = BotAI.displayOptionMenuBotCombat },
+		{ id = "follow_range", text = I18n.getTranslationKeyByLang(lang, "menu_follow") + ": " + (BotAI.FollowRange).tostring(), callback = BotAI.displayOptionMenuBotDistance },
+		{ id = "teleport_range", text = I18n.getTranslationKeyByLang(lang, "menu_teleport") + ": " + (BotAI.TeleportDistance).tostring(), callback = BotAI.displayOptionMenuBotFollowTeleport },
+		{ id = "allow_melee", text = BotAI.fromParams(BotAI.Melee, lang)+I18n.getTranslationKeyByLang(lang, "menu_take_melee"), callback = BotMeleeCmd },
+		{ id = "immunity", text = BotAI.fromParams(BotAI.Immunity, lang)+I18n.getTranslationKeyByLang(lang, "menu_immunity"), callback = BotImmunityCmd },
+		{ id = "pathfinding", text = BotAI.fromParams(BotAI.PathFinding, lang)+I18n.getTranslationKeyByLang(lang, "menu_pathfinding"), callback = BotPathFindingCmd },
+		{ id = "unstick", text = BotAI.fromParams(BotAI.UnStick, lang)+I18n.getTranslationKeyByLang(lang, "menu_unstick"), callback = BotUnstickCmd },
+		{ id = "damage_settings", text = I18n.getTranslationKeyByLang(lang, "menu_damage_settings"), callback = BotAI.displayOptionMenuDamageSettings },
+		{ id = "banned_weapons", text = I18n.getTranslationKeyByLang(lang, "menu_banned_weapons"), callback = BotAI.displayOptionMenuBannedWeapons },
+		{ id = "find_gas", text = BotAI.fromParams(BotAI.NeedGasFinding, lang)+I18n.getTranslationKeyByLang(lang, "menu_find_gas"), callback = BotGascanFindCmd },
+		{ id = "bot_alive", text = BotAI.fromParams(BotAI.NeedBotAlive, lang)+I18n.getTranslationKeyByLang(lang, "menu_alive"), callback = BotAliveCmd },
+		{ id = "defibrillator", text = BotAI.fromParams(BotAI.Defibrillator, lang)+I18n.getTranslationKeyByLang(lang, "menu_defibrillator"), callback = BotDefibrillatorCmd },
+		{ id = "use_upgrades", text = BotAI.fromParams(BotAI.UseUpgrades, lang)+I18n.getTranslationKeyByLang(lang, "menu_upgrads"), callback = BotUseUpgradesCmd },
+		{ id = "backpack", text = BotAI.fromParams(BotAI.BackPack, lang)+I18n.getTranslationKeyByLang(lang, "menu_carry"), callback = BotBackPackCmd },
+		{ id = "non_alive_damage", text = I18n.getTranslationKeyByLang(lang, "menu_non_alive_damage") + ": " + (BotAI.NonAliveDamageMultiplier).tostring(), callback = BotAI.displayOptionMenuBotNonAliveDamage },
+		{ id = "save_teleport", text = I18n.getTranslationKeyByLang(lang, "menu_save_teleport") + ": " + (BotAI.SaveTeleport).tostring(), callback = BotAI.displayOptionMenuBotTeleport },
+		{ id = "fall_protect", text = BotAI.fromParams(BotAI.FallProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fall_protect"), callback = BotFallProtectCmd },
+		{ id = "fire_protect", text = BotAI.fromParams(BotAI.FireProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fire_protect"), callback = BotFireProtectCmd },
+		{ id = "acid_protect", text = BotAI.fromParams(BotAI.AcidProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_acid_protect"), callback = BotAcidProtectCmd },
+		{ id = "non_alive_protect", text = BotAI.fromParams(BotAI.NonAliveProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_non_alive_protect"), callback = BotNonAliveProtectCmd },
+		{ id = "passing_item", text = BotAI.fromParams(BotAI.PassingItems, lang)+I18n.getTranslationKeyByLang(lang, "menu_passing_item"), callback = BotPassingItemsCmd },
+		{ id = "close_door", text = BotAI.fromParams(BotAI.CloseSaferoomDoor, lang)+I18n.getTranslationKeyByLang(lang, "menu_close_door"), callback = BotCloseSaferoomDoorCmd },
+		{ id = "throw_pipe", text = BotAI.fromParams(BotAI.NeedThrowPipeBomb, lang)+I18n.getTranslationKeyByLang(lang, "menu_throw_pipe"), callback = BotThrowPipeBombCmd },
+		{ id = "throw_fire", text = BotAI.fromParams(BotAI.NeedThrowMolotov, lang)+I18n.getTranslationKeyByLang(lang, "menu_throw_fire"), callback = BotThrowFireCmd },
+		{ id = "teleport_to_saferoom", text = BotAI.fromParams(BotAI.TeleportToSaferoom, lang)+I18n.getTranslationKeyByLang(lang, "menu_teleport_to_saferoom"), callback = BotTeleportToSaferoomCmd },
+		{ id = "spread_compensation", text = BotAI.fromParams(BotAI.SpreadCompensation, lang)+I18n.getTranslationKeyByLang(lang, "menu_spread_compensation"), callback = BotSpreadCompensationCmd },
+		{ id = "overpowered_combat_boost", text = BotAI.fromParams(BotAI.OverpoweredCombatBoost, lang)+I18n.getTranslationKeyByLang(lang, "menu_overpowered_combat_boost"), callback = BotOverpoweredCombatBoostCmd }
+	];
+}
+
+function BotAI::getSortedMainMenuOptions(lang) {
+	local defs = BotAI.getMainMenuOptionDefs(lang);
+	local sortedDefs = [];
+	local used = {};
+	local idMap = {};
+
+	foreach(def in defs) {
+		idMap[def.id] <- def;
+	}
+
+	local configuredOrder = BotAI.normalizeMainMenuOrder(BotAI.MenuOptionOrder);
+	foreach(id in configuredOrder) {
+		if(id in idMap && !(id in used)) {
+			used[id] <- true;
+			sortedDefs.append(idMap[id]);
+		}
+	}
+
+	foreach(def in defs) {
+		if(!(def.id in used)) {
+			sortedDefs.append(def);
+		}
+	}
+
+	return sortedDefs;
+}
+
+function BotAI::displayOptionMenuPage(player, pageIndex = 0, args = "", args1 = "") {
 	local lang = BotAI.language;
+	local pageSize = 9;
+
+	local menuOptions = BotAI.getSortedMainMenuOptions(lang);
+	local totalPages = (menuOptions.len() + pageSize - 1) / pageSize;
+	if(totalPages < 1) {
+		totalPages = 1;
+	}
+
+	if(pageIndex < 0) {
+		pageIndex = 0;
+	} else if(pageIndex >= totalPages) {
+		pageIndex = totalPages - 1;
+	}
+
+	BotAI.setMenuReturnPage(player, pageIndex);
+
+	local startIndex = pageIndex * pageSize;
+	local endIndex = startIndex + pageSize;
+	if(endIndex > menuOptions.len()) {
+		endIndex = menuOptions.len();
+	}
+
+	local currentPageOptions = [];
+	for(local i = startIndex; i < endIndex; i++) {
+		currentPageOptions.append(menuOptions[i]);
+	}
+
+	local function makePageCallback(baseCallback, selectedPage) {
+		local callback = baseCallback;
+		local page = selectedPage;
+		return function(p, a, a1) {
+			BotAI.setMenuReturnPage(p, page);
+			callback(p, a, a1);
+		}
+	}
+
 	local function top(menu) {
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_bot_skill") + ": " + (1 + BotAI.BotCombatSkill).tostring(), BotAI.displayOptionMenuBotCombat);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_follow") + ": " + (BotAI.FollowRange).tostring(), BotAI.displayOptionMenuBotDistance);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_teleport") + ": " + (BotAI.TeleportDistance).tostring(), BotAI.displayOptionMenuBotFollowTeleport);
-		menu.AddOption(BotAI.fromParams(BotAI.Melee, lang)+I18n.getTranslationKeyByLang(lang, "menu_take_melee"), BotMeleeCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.Immunity, lang)+I18n.getTranslationKeyByLang(lang, "menu_immunity"), BotImmunityCmd);
+		for(local i = 0; i < 5; i++) {
+			if(i < currentPageOptions.len()) {
+				local option = currentPageOptions[i];
+				menu.AddOption(option.text, makePageCallback(option.callback, pageIndex));
+			} else {
+				menu.AddOption("emp_0", BotEmptyCmd);
+			}
+		}
 	}
 
 	local function bot(menu) {
-		menu.AddOption(BotAI.fromParams(BotAI.PathFinding, lang)+I18n.getTranslationKeyByLang(lang, "menu_pathfinding"), BotPathFindingCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.UnStick, lang)+I18n.getTranslationKeyByLang(lang, "menu_unstick"), BotUnstickCmd);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_damage_settings"), BotAI.displayOptionMenuDamageSettings);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_banned_weapons"), BotAI.displayOptionMenuBannedWeapons);
+		for(local i = 5; i < pageSize; i++) {
+			if(i < currentPageOptions.len()) {
+				local option = currentPageOptions[i];
+				menu.AddOption(option.text, makePageCallback(option.callback, pageIndex));
+			} else {
+				menu.AddOption("emp_0", BotEmptyCmd);
+			}
+		}
 	}
 
 	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, null, BotAI.displayOptionMenuNext);
+
+	local preCallback = null;
+	local nextCallback = null;
+	if(pageIndex > 0) {
+		local prePage = pageIndex - 1;
+		preCallback = function(p, a, a1) {
+			BotAI.displayOptionMenuPage(p, prePage, a, a1);
+		}
+	}
+	if(pageIndex < totalPages - 1) {
+		local nextPage = pageIndex + 1;
+		nextCallback = function(p, a, a1) {
+			BotAI.displayOptionMenuPage(p, nextPage, a, a1);
+		}
+	}
+
+	BotAI.setMenuNavigation(player, preCallback, nextCallback);
+}
+
+function BotAI::displayOptionMenu(player, args, args1) {
+	BotAI.displayOptionMenuPage(player, 0, args, args1);
 }
 
 function BotAI::displayOptionMenuNext(player, args, args1) {
-	local lang = BotAI.language;
-	local function top(menu) {
-		menu.AddOption(BotAI.fromParams(BotAI.NeedGasFinding, lang)+I18n.getTranslationKeyByLang(lang, "menu_find_gas"), BotGascanFindCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.NeedBotAlive, lang)+I18n.getTranslationKeyByLang(lang, "menu_alive"), BotAliveCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.Defibrillator, lang)+I18n.getTranslationKeyByLang(lang, "menu_defibrillator"), BotDefibrillatorCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.UseUpgrades, lang)+I18n.getTranslationKeyByLang(lang, "menu_upgrads"), BotUseUpgradesCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.BackPack, lang)+I18n.getTranslationKeyByLang(lang, "menu_carry"), BotBackPackCmd);
-	}
-
-	local function bot(menu) {
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_non_alive_damage") + ": " + (BotAI.NonAliveDamageMultiplier).tostring(), BotAI.displayOptionMenuBotNonAliveDamage);
-		menu.AddOption(I18n.getTranslationKeyByLang(lang, "menu_save_teleport") + ": " + (BotAI.SaveTeleport).tostring(), BotAI.displayOptionMenuBotTeleport);
-		menu.AddOption(BotAI.fromParams(BotAI.FallProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fall_protect"), BotFallProtectCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.FireProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_fire_protect"), BotFireProtectCmd);
-	}
-
-	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, BotAI.displayOptionMenuNextNext);
+	BotAI.displayOptionMenuPage(player, 1, args, args1);
 }
 
 function BotAI::displayOptionMenuNextNext(player, args, args1) {
-	local lang = BotAI.language;
-	local function top(menu) {
-		menu.AddOption(BotAI.fromParams(BotAI.AcidProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_acid_protect"), BotAcidProtectCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.NonAliveProtect, lang)+I18n.getTranslationKeyByLang(lang, "menu_non_alive_protect"), BotNonAliveProtectCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.PassingItems, lang)+I18n.getTranslationKeyByLang(lang, "menu_passing_item"), BotPassingItemsCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.CloseSaferoomDoor, lang)+I18n.getTranslationKeyByLang(lang, "menu_close_door"), BotCloseSaferoomDoorCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.NeedThrowPipeBomb, lang)+I18n.getTranslationKeyByLang(lang, "menu_throw_pipe"), BotThrowPipeBombCmd);
-	}
-
-	local function bot(menu) {
-		menu.AddOption(BotAI.fromParams(BotAI.NeedThrowMolotov, lang)+I18n.getTranslationKeyByLang(lang, "menu_throw_fire"), BotThrowFireCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.TeleportToSaferoom, lang)+I18n.getTranslationKeyByLang(lang, "menu_teleport_to_saferoom"), BotTeleportToSaferoomCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.SpreadCompensation, lang)+I18n.getTranslationKeyByLang(lang, "menu_spread_compensation"), BotSpreadCompensationCmd);
-		menu.AddOption(BotAI.fromParams(BotAI.OverpoweredCombatBoost, lang)+I18n.getTranslationKeyByLang(lang, "menu_overpowered_combat_boost"), BotOverpoweredCombatBoostCmd);
-	}
-
-	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuNext, null);
+	BotAI.displayOptionMenuPage(player, 2, args, args1);
 }
 
 function BotAI::displayOptionMenuDamageSettings(player, args, args1) {
@@ -1153,7 +1424,7 @@ function BotAI::displayOptionMenuDamageSettings(player, args, args1) {
 	}
 
 	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuReturn, null);
 }
 
 function BotAI::displayOptionMenuBotCombat(player, args, args1) {
@@ -1207,7 +1478,7 @@ function BotAI::displayOptionMenuBotCombat(player, args, args1) {
 	}
 
 	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuReturn, null);
 }
 
 function BotAI::displayOptionMenuBotDistance(player, args, args1) {
@@ -1261,7 +1532,7 @@ function BotAI::displayOptionMenuBotDistance(player, args, args1) {
 	}
 
 	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuReturn, null);
 }
 
 function BotAI::displayOptionMenuBotFollowTeleport(player, args, args1) {
@@ -1315,7 +1586,7 @@ function BotAI::displayOptionMenuBotFollowTeleport(player, args, args1) {
 	}
 
 	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuReturn, null);
 }
 
 function BotAI::displayOptionMenuBotTeleport(player, args, args1) {
@@ -1369,7 +1640,7 @@ function BotAI::displayOptionMenuBotTeleport(player, args, args1) {
 	}
 
 	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuNext, null);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuReturn, null);
 }
 
 function BotAI::displayOptionMenuBotWitchDamage(player, args, args1) {
@@ -1675,7 +1946,7 @@ function BotAI::displayOptionMenuBannedWeapons(player, args, args1) {
 	}
 
 	BotAI.buildMenu(player, top, bot);
-	BotAI.setMenuNavigation(player, BotAI.displayOptionMenu, null);
+	BotAI.setMenuNavigation(player, BotAI.displayOptionMenuReturn, null);
 }
 
 ::BotExitMenuCmd <- function(speaker, args, args1) {
